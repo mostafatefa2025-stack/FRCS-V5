@@ -29,10 +29,10 @@ jobs:
 
     - name: Build Single Executable with PyInstaller
       run: |
-        pyinstaller --noconfirm --onefile --windowed --name "FRCS_V5_Setup" gemini-code-1791027611282.py
+        pyinstaller --noconfirm --onefile --windowed --name "FRCS_V5_App" desktop/main.py
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: FRCS_V5_Setup_Installer
-        path: dist/FRCS_V5_Setup.exe
+        name: FRCS_V5_Setup_Executable
+        path: dist/FRCS_V5_App.exe
