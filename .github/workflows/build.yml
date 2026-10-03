@@ -27,6 +27,56 @@ jobs:
       run: |
         python gemini-code-1791027611282.py
 
+    - name: Generate Main GUI File
+      shell: cmd
+      run: |
+        if not exist desktop mkdir desktop
+        (
+          echo import sys
+          echo from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QPushButton, QHBoxLayout, QFrame
+          echo from PySide6.QtCore import Qt
+          echo.
+          echo class FRCSMainWindow^(QMainWindow^):
+          echo     def __init__^(self^):
+          echo         super^(^).__init__^(^)
+          echo         self.setWindowTitle^("Financial Risk ^& Consulting System - FRCS V5"^)
+          echo         self.resize^(800, 500^)
+          echo         central_widget = QWidget^(^)
+          echo         self.setCentralWidget^(central_widget^)
+          echo         main_layout = QVBoxLayout^(central_widget^)
+          echo         header = QFrame^(^)
+          echo         header.setStyleSheet^("background-color: #1E3A8A; border-radius: 8px; padding: 20px;"^)
+          echo         header_layout = QVBoxLayout^(header^)
+          echo         title_label = QLabel^("نظام التحليل المالي والتقييم - FRCS V5"^)
+          echo         title_label.setAlignment^(Qt.AlignCenter^)
+          echo         title_label.setStyleSheet^("color: white; font-size: 22px; font-weight: bold;"^)
+          echo         subtitle_label = QLabel^("Financial Risk ^& Consulting System"^)
+          echo         subtitle_label.setAlignment^(Qt.AlignCenter^)
+          echo         subtitle_label.setStyleSheet^("color: #93C5FD; font-size: 14px;"^)
+          echo         header_layout.addWidget^(title_label^)
+          echo         header_layout.addWidget^(subtitle_label^)
+          echo         main_layout.addWidget^(header^)
+          echo         content_label = QLabel^("جاهز للربط مع المحركات المالية وتصنيفات التقييم "^)
+          echo         content_label.setAlignment^(Qt.AlignCenter^)
+          echo         content_label.setStyleSheet^("font-size: 16px; color: #374151; margin-top: 40px;"^)
+          echo         main_layout.addWidget^(content_label^)
+          echo         btn_layout = QHBoxLayout^(^)
+          echo         run_btn = QPushButton^("بدء التحليل المالي"^)
+          echo         run_btn.setStyleSheet^("background-color: #059669; color: white; padding: 12px 24px; font-size: 14px; font-weight: bold; border-radius: 6px;"^)
+          echo         exit_btn = QPushButton^("خروج"^)
+          echo         exit_btn.clicked.connect^(self.close^)
+          echo         exit_btn.setStyleSheet^("background-color: #DC2626; color: white; padding: 12px 24px; font-size: 14px; font-weight: bold; border-radius: 6px;"^)
+          echo         btn_layout.addWidget^(exit_btn^)
+          echo         btn_layout.addWidget^(run_btn^)
+          echo         main_layout.addLayout^(btn_layout^)
+          echo.
+          echo if __name__ == "__main__":
+          echo     app = QApplication^(sys.argv^)
+          echo     window = FRCSMainWindow^(^)
+          echo     window.show^(^)
+          echo     sys.exit^(app.exec^(^)^)
+        ) > desktop\main.py
+
     - name: Build Single Executable with PyInstaller
       run: |
         pyinstaller --noconfirm --onefile --windowed --name "FRCS_V5_App" desktop/main.py
