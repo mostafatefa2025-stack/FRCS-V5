@@ -23,7 +23,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller PySide6 pandas numpy openpyxl
 
-    - name: Generate Robust Main GUI Script
+    - name: Generate Full FRCS V5 Application Code
       run: |
         python -c "
         import os
@@ -36,7 +36,7 @@ jobs:
             try:
                 from PySide6.QtWidgets import QApplication, QMessageBox
                 app = QApplication.instance() or QApplication(sys.argv)
-                QMessageBox.critical(None, 'FRCS V5 Startup Error', f'حدث خطأ أثناء تشغيل التطبيق:\\n\\n{error_msg}')
+                QMessageBox.critical(None, 'FRCS V5 Startup Error', f'Runtime Error:\\n\\n{error_msg}')
             except Exception:
                 print(error_msg)
             sys.exit(1)
@@ -46,143 +46,248 @@ jobs:
         from PySide6.QtWidgets import (
             QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, 
             QPushButton, QHBoxLayout, QFrame, QDialog, QFormLayout, 
-            QLineEdit, QMessageBox, QGroupBox, QScrollArea, QTabWidget, QTextEdit
+            QLineEdit, QMessageBox, QGroupBox, QScrollArea, QTabWidget,
+            QComboBox, QGridLayout
         )
         from PySide6.QtCore import Qt
+        from PySide6.QtGui import QFont
 
-        class FinancialDataDialog(QDialog):
+        class FullFinancialDataDialog(QDialog):
             def __init__(self, parent=None):
                 super().__init__(parent)
-                self.setWindowTitle('إدخال القوائم المالية الشاملة - FRCS V5')
-                self.resize(700, 650)
+                self.setWindowTitle('FRCS V5 - Comprehensive Financial Inputs & Engines')
+                self.resize(850, 700)
                 layout = QVBoxLayout(self)
 
-                tabs = QTabWidget()
+                # Sector Selection
+                sector_group = QGroupBox('1. Corporate Setup & Industry Classification')
+                sector_layout = QFormLayout(sector_group)
+                self.sector_combo = QComboBox()
+                self.sector_combo.addItems([
+                    'Manufacturing & Industrial', 
+                    'Real Estate & Construction', 
+                    'Retail & Wholesale', 
+                    'Commercial Services', 
+                    'Healthcare & Pharma', 
+                    'Technology & Telecom'
+                ])
+                self.wacc_input = QLineEdit('0.10')
+                self.tax_input = QLineEdit('0.225')
+                sector_layout.addRow('Industry Sector:', self.sector_combo)
+                sector_layout.addRow('Cost of Capital (WACC %):', self.wacc_input)
+                sector_layout.addRow('Corporate Tax Rate:', self.tax_input)
+                layout.addWidget(sector_group)
 
-                # Tab 1: Balance Sheet
-                bs_tab = QWidget()
-                bs_layout = QFormLayout(bs_tab)
+                # Financial Statement Tabs
+                tabs = QTabWidget()
                 self.inputs = {}
+
+                # Balance Sheet
+                bs_tab = QWidget()
+                bs_scroll = QScrollArea()
+                bs_scroll.setWidgetResizable(True)
+                bs_content = QWidget()
+                bs_layout = QFormLayout(bs_content)
+                
                 bs_fields = [
-                    ('total_assets', 'إجمالي الأصول:'),
-                    ('current_assets', 'الأصول المتداولة:'),
-                    ('cash_and_equiv', 'النقدية وما يعادلها:'),
-                    ('total_liabilities', 'إجمالي الالتزامات:'),
-                    ('current_liabilities', 'الالتزامات المتداولة:'),
-                    ('total_debt', 'إجمالي الديون/القروض:'),
-                    ('retained_earnings', 'الأرباح المبقاة:'),
-                    ('total_equity', 'إجمالي حقوق الملكية:')
+                    ('cash', 'Cash & Cash Equivalents:'),
+                    ('st_invest', 'Short-Term Investments:'),
+                    ('receivables', 'Accounts Receivable:'),
+                    ('inventory', 'Inventory:'),
+                    ('total_ca', 'Total Current Assets:'),
+                    ('ppe', 'Net Property, Plant & Equipment (PPE):'),
+                    ('intangibles', 'Intangible Assets:'),
+                    ('total_nca', 'Total Non-Current Assets:'),
+                    ('total_assets', 'TOTAL ASSETS:'),
+                    ('payables', 'Accounts Payable:'),
+                    ('st_debt', 'Short-Term Debt & Borrowings:'),
+                    ('current_ltd', 'Current Portion of Long-Term Debt:'),
+                    ('total_cl', 'Total Current Liabilities:'),
+                    ('lt_debt', 'Long-Term Debt:'),
+                    ('total_ncl', 'Total Non-Current Liabilities:'),
+                    ('total_liabilities', 'TOTAL LIABILITIES:'),
+                    ('common_stock', 'Common Stock & Paid-in Capital:'),
+                    ('retained_earnings', 'Retained Earnings:'),
+                    ('total_equity', 'TOTAL SHAREHOLDERS EQUITY:')
                 ]
                 for key, label in bs_fields:
                     inp = QLineEdit()
                     inp.setPlaceholderText('0.00')
                     bs_layout.addRow(label, inp)
                     self.inputs[key] = inp
-                tabs.addTab(bs_tab, 'الميزانية العمومية')
+                bs_scroll.setWidget(bs_content)
+                bs_tab_layout = QVBoxLayout(bs_tab)
+                bs_tab_layout.addWidget(bs_scroll)
+                tabs.addTab(bs_tab, 'Balance Sheet (Raw)')
 
-                # Tab 2: Income Statement
+                # Income Statement
                 is_tab = QWidget()
-                is_layout = QFormLayout(is_tab)
+                is_scroll = QScrollArea()
+                is_scroll.setWidgetResizable(True)
+                is_content = QWidget()
+                is_layout = QFormLayout(is_content)
+
                 is_fields = [
-                    ('revenue', 'إجمالي المبيعات / الإيرادات:'),
-                    ('cogs', 'تكلفة المبيعات / البضاعة:'),
-                    ('ebit', 'الأرباح قبل الفوائد والضرائب (EBIT):'),
-                    ('interest_exp', 'مصروفات الفوائد:'),
-                    ('net_income', 'صافي الدخل:')
+                    ('revenue', 'Total Revenues / Sales:'),
+                    ('cogs', 'Cost of Goods Sold (COGS):'),
+                    ('gross_profit', 'Gross Profit:'),
+                    ('sga', 'Selling, General & Admin (SG&A):'),
+                    ('da', 'Depreciation & Amortization:'),
+                    ('ebit', 'Operating Income (EBIT):'),
+                    ('interest_exp', 'Interest Expense:'),
+                    ('ebt', 'Earnings Before Taxes (EBT):'),
+                    ('tax_exp', 'Income Tax Expense:'),
+                    ('net_income', 'NET INCOME:')
                 ]
                 for key, label in is_fields:
                     inp = QLineEdit()
                     inp.setPlaceholderText('0.00')
                     is_layout.addRow(label, inp)
                     self.inputs[key] = inp
-                tabs.addTab(is_tab, 'قائمة الدخل')
+                is_scroll.setWidget(is_content)
+                is_tab_layout = QVBoxLayout(is_tab)
+                is_tab_layout.addWidget(is_scroll)
+                tabs.addTab(is_tab, 'Income Statement (Raw)')
 
-                # Tab 3: Cash Flow
+                # Cash Flow
                 cf_tab = QWidget()
-                cf_layout = QFormLayout(cf_tab)
+                cf_scroll = QScrollArea()
+                cf_scroll.setWidgetResizable(True)
+                cf_content = QWidget()
+                cf_layout = QFormLayout(cf_content)
+
                 cf_fields = [
-                    ('operating_cf', 'التدفقات النقدية من التشغيل (OCF):'),
-                    ('capex', 'الإنفاق الرأسمالي (CAPEX):'),
-                    ('free_cf', 'التدفق النقدي الحر (FCFF):')
+                    ('ocf', 'Operating Cash Flow (OCF):'),
+                    ('capex', 'Capital Expenditures (CAPEX):'),
+                    ('fcff', 'Free Cash Flow to Firm (FCFF):'),
+                    ('fcfe', 'Free Cash Flow to Equity (FCFE):')
                 ]
                 for key, label in cf_fields:
                     inp = QLineEdit()
                     inp.setPlaceholderText('0.00')
                     cf_layout.addRow(label, inp)
                     self.inputs[key] = inp
-                tabs.addTab(cf_tab, 'التدفقات النقدية')
+                cf_scroll.setWidget(cf_content)
+                cf_tab_layout = QVBoxLayout(cf_tab)
+                cf_tab_layout.addWidget(cf_scroll)
+                tabs.addTab(cf_tab, 'Cash Flow Statement')
 
                 layout.addWidget(tabs)
 
                 btn_box = QHBoxLayout()
-                calc_btn = QPushButton('تشغيل محركات التحليل (Z-Score / DCF / Piotroski)')
-                calc_btn.setStyleSheet('background-color: #059669; color: white; padding: 10px; font-weight: bold; border-radius: 5px;')
-                calc_btn.clicked.connect(self.run_analysis)
-                btn_box.addWidget(calc_btn)
+                run_btn = QPushButton('Execute FRCS Risk & Valuation Engines')
+                run_btn.setStyleSheet('background-color: #059669; color: white; padding: 12px; font-weight: bold; border-radius: 6px;')
+                run_btn.clicked.connect(self.calculate_all)
+                btn_box.addWidget(run_btn)
                 layout.addLayout(btn_box)
 
-            def run_analysis(self):
+            def get_val(self, key):
                 try:
-                    assets = float(self.inputs['total_assets'].text() or 0)
-                    liab = float(self.inputs['total_liabilities'].text() or 0)
-                    equity = float(self.inputs['total_equity'].text() or 0)
-                    re = float(self.inputs['retained_earnings'].text() or 0)
-                    ebit = float(self.inputs['ebit'].text() or 0)
-                    rev = float(self.inputs['revenue'].text() or 0)
-                    ca = float(self.inputs['current_assets'].text() or 0)
-                    cl = float(self.inputs['current_liabilities'].text() or 0)
+                    return float(self.inputs[key].text() or 0.0)
+                except ValueError:
+                    return 0.0
 
-                    wc = ca - cl
-                    z_score = 0.0
-                    if assets > 0:
-                        x1 = wc / assets
-                        x2 = re / assets
-                        x3 = ebit / assets
-                        x4 = equity / liab if liab > 0 else 1.0
-                        x5 = rev / assets
-                        z_score = round(1.2 * x1 + 1.4 * x2 + 3.3 * x3 + 0.6 * x4 + 0.999 * x5, 2)
+            def calculate_all(self):
+                assets = self.get_val('total_assets')
+                liab = self.get_val('total_liabilities')
+                equity = self.get_val('total_equity')
+                re = self.get_val('retained_earnings')
+                ebit = self.get_val('ebit')
+                rev = self.get_val('revenue')
+                ca = self.get_val('total_ca')
+                cl = self.get_val('total_cl')
 
-                    status = 'Safe Zone (منطقة آمنة)' if z_score > 2.99 else ('Grey Zone (منطقة رمادية)' if z_score >= 1.81 else 'Distress Zone (منطقة تعثر)')
+                if assets <= 0:
+                    QMessageBox.warning(self, 'Input Error', 'Total Assets must be greater than zero.')
+                    return
 
-                    res_msg = f'نتائج التحليل المالي والمحركات:\\n\\n- مؤشر Altman Z-Score: {z_score}\\n- تصنيف حالة الشركة: {status}\\n- رأس المال العامل: {wc:,.2f}'
-                    QMessageBox.information(self, 'تقرير المحرك المالي', res_msg)
-                except Exception as e:
-                    QMessageBox.warning(self, 'خطأ', f'يرجى التأكد من إدخال أرقام صحيحة: {e}')
+                # Altman Z-Score
+                wc = ca - cl
+                x1 = wc / assets
+                x2 = re / assets
+                x3 = ebit / assets
+                x4 = equity / liab if liab > 0 else 1.0
+                x5 = rev / assets
+                z_score = round(1.2 * x1 + 1.4 * x2 + 3.3 * x3 + 0.6 * x4 + 0.999 * x5, 2)
+
+                # Piotroski F-Score (Proxy calculation based on inputs)
+                net_inc = self.get_val('net_income')
+                ocf = self.get_val('ocf')
+                f_score = 0
+                if net_inc > 0: f_score += 1
+                if ocf > 0: f_score += 1
+                if ocf > net_inc: f_score += 1
+                if wc > 0: f_score += 1
+
+                zone = 'SAFE ZONE (Green)' if z_score > 2.99 else ('GREY ZONE (Yellow)' if z_score >= 1.81 else 'DISTRESS ZONE (Red)')
+
+                res_dialog = QDialog(self)
+                res_dialog.setWindowTitle('FRCS V5 - Executive Valuation & Risk Dashboard')
+                res_dialog.resize(600, 450)
+                res_layout = QVBoxLayout(res_dialog)
+
+                dash_frame = QFrame()
+                color = '#059669' if z_score > 2.99 else ('#D97706' if z_score >= 1.81 else '#DC2626')
+                dash_frame.setStyleSheet(f'background-color: {color}; border-radius: 8px; padding: 15px;')
+                dash_l = QVBoxLayout(dash_frame)
+                
+                title_lbl = QLabel(f'COMPOSITE HEALTH: {zone}')
+                title_lbl.setStyleSheet('color: white; font-size: 18px; font-weight: bold;')
+                dash_l.addWidget(title_lbl)
+                res_layout.addWidget(dash_frame)
+
+                metrics_lbl = QLabel(
+                    f'<b>Executive Summary & Model Metrics:</b><br><br>'
+                    f'• <b>Altman Z-Score:</b> {z_score}<br>'
+                    f'• <b>Piotroski F-Score (Proxy):</b> {f_score} / 9<br>'
+                    f'• <b>Net Working Capital:</b> {wc:,.2f}<br>'
+                    f'• <b>Working Capital / Total Assets:</b> {x1:.2%}<br>'
+                    f'• <b>EBIT / Total Assets:</b> {x3:.2%}<br>'
+                    f'• <b>Equity / Liabilities Ratio:</b> {x4:.2f}x'
+                )
+                metrics_lbl.setStyleSheet('font-size: 14px; color: #1F2937; margin-top: 15px;')
+                res_layout.addWidget(metrics_lbl)
+
+                close_btn = QPushButton('Close Report')
+                close_btn.clicked.connect(res_dialog.accept)
+                res_layout.addWidget(close_btn)
+
+                res_dialog.exec()
 
         class FRCSMainWindow(QMainWindow):
             def __init__(self):
                 super().__init__()
                 self.setWindowTitle('Financial Risk & Consulting System - FRCS V5')
-                self.resize(850, 550)
+                self.resize(900, 600)
                 central = QWidget()
                 self.setCentralWidget(central)
                 layout = QVBoxLayout(central)
 
                 header = QFrame()
-                header.setStyleSheet('background-color: #1E3A8A; border-radius: 8px; padding: 20px;')
+                header.setStyleSheet('background-color: #1E3A8A; border-radius: 8px; padding: 25px;')
                 h_layout = QVBoxLayout(header)
-                title = QLabel('نظام التحليل المالي والتقييم - FRCS V5 (النظام الشامل)')
+                title = QLabel('FRCS V5 - Master Financial Advisory Platform')
                 title.setAlignment(Qt.AlignCenter)
-                title.setStyleSheet('color: white; font-size: 22px; font-weight: bold;')
-                sub = QLabel('Financial Risk & Consulting System')
+                title.setStyleSheet('color: white; font-size: 24px; font-weight: bold;')
+                sub = QLabel('Financial Risk, Corporate Valuation & Advisory Engines')
                 sub.setAlignment(Qt.AlignCenter)
-                sub.setStyleSheet('color: #93C5FD; font-size: 14px;')
+                sub.setStyleSheet('color: #93C5FD; font-size: 15px;')
                 h_layout.addWidget(title)
                 h_layout.addWidget(sub)
                 layout.addWidget(header)
 
-                desc = QLabel('ادخل القوائم المالية الثلاث لتشغيل محركات التقييم والتنبؤ بالتعثر المالي')
+                desc = QLabel('Select company parameters, input financial statement raw data, and execute corporate risk & valuation models.')
                 desc.setAlignment(Qt.AlignCenter)
-                desc.setStyleSheet('font-size: 15px; color: #374151; margin-top: 30px;')
+                desc.setStyleSheet('font-size: 15px; color: #374151; margin-top: 40px;')
                 layout.addWidget(desc)
 
                 btn_box = QHBoxLayout()
-                btn_start = QPushButton('فتح القوائم المالية وبدء التحليل')
-                btn_start.setStyleSheet('background-color: #059669; color: white; padding: 12px 24px; font-size: 15px; font-weight: bold; border-radius: 6px;')
+                btn_start = QPushButton('Open Financial Statements & Valuation Engines')
+                btn_start.setStyleSheet('background-color: #059669; color: white; padding: 15px 30px; font-size: 16px; font-weight: bold; border-radius: 6px;')
                 btn_start.clicked.connect(self.open_dialog)
 
-                btn_exit = QPushButton('خروج')
-                btn_exit.setStyleSheet('background-color: #DC2626; color: white; padding: 12px 24px; font-size: 15px; font-weight: bold; border-radius: 6px;')
+                btn_exit = QPushButton('Exit')
+                btn_exit.setStyleSheet('background-color: #DC2626; color: white; padding: 15px 30px; font-size: 16px; font-weight: bold; border-radius: 6px;')
                 btn_exit.clicked.connect(self.close)
 
                 btn_box.addWidget(btn_exit)
@@ -190,7 +295,7 @@ jobs:
                 layout.addLayout(btn_box)
 
             def open_dialog(self):
-                d = FinancialDataDialog(self)
+                d = FullFinancialDataDialog(self)
                 d.exec()
 
         if __name__ == '__main__':
