@@ -28,126 +28,132 @@ jobs:
         python gemini-code-1791027611282.py
 
     - name: Generate Main GUI File
-      shell: cmd
       run: |
-        if not exist desktop mkdir desktop
-        (
-          echo import sys
-          echo from PySide6.QtWidgets import ^(QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, 
-          echo                                QPushButton, QHBoxLayout, QFrame, QDialog, QFormLayout, 
-          echo                                QLineEdit, QMessageBox, QGroupBox, QScrollArea^)
-          echo from PySide6.QtCore import Qt
-          echo.
-          echo class FinancialDataDialog^(QDialog^):
-          echo     def __init__^(self, parent=None^):
-          echo         super^(^).__init__^(parent^)
-          echo         self.setWindowTitle^("إدخال البيانات والقوائم المالية - FRCS V5"^)
-          echo         self.resize^(550, 600^)
-          echo         self.setLayout^(QVBoxLayout^(^)^)
-          echo.
-          echo         scroll = QScrollArea^(^)
-          echo         scroll.setWidgetResizable^(True^)
-          echo         content = QWidget^(^)
-          echo         form_layout = QVBoxLayout^(content^)
-          echo.
-          echo         # Balance Sheet Group
-          echo         bs_group = QGroupBox^("بيانات الميزانية العمومية"^)
-          echo         bs_layout = QFormLayout^(bs_group^)
-          echo         self.inputs = {}
-          echo         fields_bs = [
-          echo             ^("total_assets", "إجمالي الأصول:"^),
-          echo             ^("current_assets", "الأصول المتداولة:"^),
-          echo             ^("total_liabilities", "إجمالي الالتزامات:"^),
-          echo             ^("current_liabilities", "الالتزامات المتداولة:"^),
-          echo             ^("retained_earnings", "الأرباح المبقاة:"^),
-          echo             ^("equity", "إجمالي حقوق الملكية:"^)
-          echo         ]
-          echo         for key, label in fields_bs:
-          echo             inp = QLineEdit^(^)
-          echo             inp.setPlaceholderText^("0.00"^)
-          echo             bs_layout.addRow^(label, inp^)
-          echo             self.inputs[key] = inp
-          echo         form_layout.addWidget^(bs_group^)
-          echo.
-          echo         # Income Statement Group
-          echo         is_group = QGroupBox^("بيانات قائمة الدخل"^)
-          echo         is_layout = QFormLayout^(is_group^)
-          echo         fields_is = [
-          echo             ^("revenue", "إجمالي المبيعات / الإيرادات:"^),
-          echo             ^("ebit", "الأرباح قبل الفوائد والضرائب (EBIT):"^),
-          echo             ^("net_income", "صافي الدخل:"^)
-          echo         ]
-          echo         for key, label in fields_is:
-          echo             inp = QLineEdit^(^)
-          echo             inp.setPlaceholderText^("0.00"^)
-          echo             is_layout.addRow^(label, inp^)
-          echo             self.inputs[key] = inp
-          echo         form_layout.addWidget^(is_group^)
-          echo.
-          echo         scroll.setWidget^(content^)
-          echo         self.layout^(^).addWidget^(scroll^)
-          echo.
-          echo         # Buttons
-          echo         btn_box = QHBoxLayout^(^)
-          echo         save_btn = QPushButton^("حفظ البيانات والتحليل"^)
-          echo         save_btn.setStyleSheet^("background-color: #059669; color: white; padding: 10px; font-weight: bold; border-radius: 5px;"^)
-          echo         save_btn.clicked.connect^(self.save_data^)
-          echo         cancel_btn = QPushButton^("إلغاء"^)
-          echo         cancel_btn.setStyleSheet^("background-color: #6B7280; color: white; padding: 10px; font-weight: bold; border-radius: 5px;"^)
-          echo         cancel_btn.clicked.connect^(self.reject^)
-          echo         btn_box.addWidget^(cancel_btn^)
-          echo         btn_box.addWidget^(save_btn^)
-          echo         self.layout^(^).addLayout^(btn_box^)
-          echo.
-          echo     def save_data^(self^):
-          echo         QMessageBox.information^(self, "تم الحفظ", "تم حفظ البيانات المالية بنجاح وهي جاهزة للحسابات والتحليل!"^)
-          echo         self.accept^(^)
-          echo.
-          echo class FRCSMainWindow^(QMainWindow^):
-          echo     def __init__^(self^):
-          echo         super^(^).__init__^(^)
-          echo         self.setWindowTitle^("Financial Risk ^& Consulting System - FRCS V5"^)
-          echo         self.resize^(800, 500^)
-          echo         central_widget = QWidget^(^)
-          echo         self.setCentralWidget^(central_widget^)
-          echo         main_layout = QVBoxLayout^(central_widget^)
-          echo         header = QFrame^(^)
-          echo         header.setStyleSheet^("background-color: #1E3A8A; border-radius: 8px; padding: 20px;"^)
-          echo         header_layout = QVBoxLayout^(header^)
-          echo         title_label = QLabel^("نظام التحليل المالي والتقييم - FRCS V5"^)
-          echo         title_label.setAlignment^(Qt.AlignCenter^)
-          echo         title_label.setStyleSheet^("color: white; font-size: 22px; font-weight: bold;"^)
-          echo         subtitle_label = QLabel^("Financial Risk ^& Consulting System"^)
-          echo         subtitle_label.setAlignment^(Qt.AlignCenter^)
-          echo         subtitle_label.setStyleSheet^("color: #93C5FD; font-size: 14px;"^)
-          echo         header_layout.addWidget^(title_label^)
-          echo         header_layout.addWidget^(subtitle_label^)
-          echo         main_layout.addWidget^(header^)
-          echo         content_label = QLabel^("جاهز للربط مع المحركات المالية وتصنيفات التقييم"^ collapse^)
-          echo         content_label.setAlignment^(Qt.AlignCenter^)
-          echo         content_label.setStyleSheet^("font-size: 16px; color: #374151; margin-top: 40px;"^)
-          echo         main_layout.addWidget^(content_label^)
-          echo         btn_layout = QHBoxLayout^(^)
-          echo         run_btn = QPushButton^("بدء التحليل المالي"^)
-          echo         run_btn.setStyleSheet^("background-color: #059669; color: white; padding: 12px 24px; font-size: 14px; font-weight: bold; border-radius: 6px;"^)
-          echo         run_btn.clicked.connect^(self.open_financial_dialog^)
-          echo         exit_btn = QPushButton^("خروج"^)
-          echo         exit_btn.clicked.connect^(self.close^)
-          echo         exit_btn.setStyleSheet^("background-color: #DC2626; color: white; padding: 12px 24px; font-size: 14px; font-weight: bold; border-radius: 6px;"^)
-          echo         btn_layout.addWidget^(exit_btn^)
-          echo         btn_layout.addWidget^(run_btn^)
-          echo         main_layout.addLayout^(btn_layout^)
-          echo.
-          echo     def open_financial_dialog^(self^):
-          echo         dialog = FinancialDataDialog^(self^)
-          echo         dialog.exec^(^)
-          echo.
-          echo if __name__ == "__main__":
-          echo     app = QApplication^(sys.argv^)
-          echo     window = FRCSMainWindow^(^)
-          echo     window.show^(^)
-          echo     sys.exit^(app.exec^(^)^)
-        ) > desktop\main.py
+        python -c "
+        import os
+        os.makedirs('desktop', exist_ok=True)
+        code = '''import sys
+        from PySide6.QtWidgets import (QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, 
+                                       QPushButton, QHBoxLayout, QFrame, QDialog, QFormLayout, 
+                                       QLineEdit, QMessageBox, QGroupBox, QScrollArea)
+        from PySide6.QtCore import Qt
+
+        class FinancialDataDialog(QDialog):
+            def __init__(self, parent=None):
+                super().__init__(parent)
+                self.setWindowTitle('إدخال البيانات والقوائم المالية - FRCS V5')
+                self.resize(550, 600)
+                self.setLayout(QVBoxLayout())
+
+                scroll = QScrollArea()
+                scroll.setWidgetResizable(True)
+                content = QWidget()
+                form_layout = QVBoxLayout(content)
+
+                # Balance Sheet Group
+                bs_group = QGroupBox('بيانات الميزانية العمومية')
+                bs_layout = QFormLayout(bs_group)
+                self.inputs = {}
+                fields_bs = [
+                    ('total_assets', 'إجمالي الأصول:'),
+                    ('current_assets', 'الأصول المتداولة:'),
+                    ('total_liabilities', 'إجمالي الالتزامات:'),
+                    ('current_liabilities', 'الالتزامات المتداولة:'),
+                    ('retained_earnings', 'الأرباح المبقاة:'),
+                    ('equity', 'إجمالي حقوق الملكية:')
+                ]
+                for key, label in fields_bs:
+                    inp = QLineEdit()
+                    inp.setPlaceholderText('0.00')
+                    bs_layout.addRow(label, inp)
+                    self.inputs[key] = inp
+                form_layout.addWidget(bs_group)
+
+                # Income Statement Group
+                is_group = QGroupBox('بيانات قائمة الدخل')
+                is_layout = QFormLayout(is_group)
+                fields_is = [
+                    ('revenue', 'إجمالي المبيعات / الإيرادات:'),
+                    ('ebit', 'الأرباح قبل الفوائد والضرائب (EBIT):'),
+                    ('net_income', 'صافي الدخل:')
+                ]
+                for key, label in fields_is:
+                    inp = QLineEdit()
+                    inp.setPlaceholderText('0.00')
+                    is_layout.addRow(label, inp)
+                    self.inputs[key] = inp
+                form_layout.addWidget(is_group)
+
+                scroll.setWidget(content)
+                self.layout().addWidget(scroll)
+
+                # Buttons
+                btn_box = QHBoxLayout()
+                save_btn = QPushButton('حفظ البيانات والتحليل')
+                save_btn.setStyleSheet('background-color: #059669; color: white; padding: 10px; font-weight: bold; border-radius: 5px;')
+                save_btn.clicked.connect(self.save_data)
+                cancel_btn = QPushButton('إلغاء')
+                cancel_btn.setStyleSheet('background-color: #6B7280; color: white; padding: 10px; font-weight: bold; border-radius: 5px;')
+                cancel_btn.clicked.connect(self.reject)
+                btn_box.addWidget(cancel_btn)
+                btn_box.addWidget(save_btn)
+                self.layout().addLayout(btn_box)
+
+            def save_data(self):
+                QMessageBox.information(self, 'تم الحفظ', 'تم حفظ البيانات المالية بنجاح وهي جاهزة للحسابات والتحليل!')
+                self.accept()
+
+        class FRCSMainWindow(QMainWindow):
+            def __init__(self):
+                super().__init__()
+                self.setWindowTitle('Financial Risk & Consulting System - FRCS V5')
+                self.resize(800, 500)
+                central_widget = QWidget()
+                self.setCentralWidget(central_widget)
+                main_layout = QVBoxLayout(central_widget)
+
+                header = QFrame()
+                header.setStyleSheet('background-color: #1E3A8A; border-radius: 8px; padding: 20px;')
+                header_layout = QVBoxLayout(header)
+                title_label = QLabel('نظام التحليل المالي والتقييم - FRCS V5')
+                title_label.setAlignment(Qt.AlignCenter)
+                title_label.setStyleSheet('color: white; font-size: 22px; font-weight: bold;')
+                subtitle_label = QLabel('Financial Risk & Consulting System')
+                subtitle_label.setAlignment(Qt.AlignCenter)
+                subtitle_label.setStyleSheet('color: #93C5FD; font-size: 14px;')
+                header_layout.addWidget(title_label)
+                header_layout.addWidget(subtitle_label)
+                main_layout.addWidget(header)
+
+                content_label = QLabel('جاهز للربط مع المحركات المالية وتصنيفات التقييم')
+                content_label.setAlignment(Qt.AlignCenter)
+                content_label.setStyleSheet('font-size: 16px; color: #374151; margin-top: 40px;')
+                main_layout.addWidget(content_label)
+
+                btn_layout = QHBoxLayout()
+                run_btn = QPushButton('بدء التحليل المالي')
+                run_btn.setStyleSheet('background-color: #059669; color: white; padding: 12px 24px; font-size: 14px; font-weight: bold; border-radius: 6px;')
+                run_btn.clicked.connect(self.open_financial_dialog)
+                exit_btn = QPushButton('خروج')
+                exit_btn.clicked.connect(self.close)
+                exit_btn.setStyleSheet('background-color: #DC2626; color: white; padding: 12px 24px; font-size: 14px; font-weight: bold; border-radius: 6px;')
+                btn_layout.addWidget(exit_btn)
+                btn_layout.addWidget(run_btn)
+                main_layout.addLayout(btn_layout)
+
+            def open_financial_dialog(self):
+                dialog = FinancialDataDialog(self)
+                dialog.exec()
+
+        if __name__ == '__main__':
+            app = QApplication(sys.argv)
+            window = FRCSMainWindow()
+            window.show()
+            sys.exit(app.exec())
+        '''
+        with open('desktop/main.py', 'w', encoding='utf-8') as f:
+            f.write(code)
+        "
 
     - name: Build Single Executable with PyInstaller
       run: |
