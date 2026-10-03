@@ -21,18 +21,18 @@ jobs:
     - name: Install Dependencies & PyInstaller
       run: |
         python -m pip install --upgrade pip
-        pip install pyinstaller
+        pip install pyinstaller PySide6 fastapi uvicorn requests
 
-    - name: Run Setup Script
+    - name: Setup Project Structure
       run: |
         python gemini-code-1791027611282.py
 
-    - name: Build Executable with PyInstaller
+    - name: Build Single Executable with PyInstaller
       run: |
-        pyinstaller --noconfirm --onedir --windowed --name "FRCS_V5" gemini-code-1791027611282.py
+        pyinstaller --noconfirm --onefile --windowed --name "FRCS_V5_Setup" gemini-code-1791027611282.py
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: FRCS_Setup_Executable
-        path: dist/FRCS_V5/
+        name: FRCS_V5_Setup_Installer
+        path: dist/FRCS_V5_Setup.exe
