@@ -27,6 +27,38 @@ jobs:
       run: |
         python gemini-code-1791027611282.py
 
+    - name: Create Main Entry File
+      run: |
+        mkdir -p desktop
+        echo "import sys" > desktop/main.py
+        echo "from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QPushButton" >> desktop/main.py
+        echo "from PySide6.QtCore import Qt" >> desktop/main.py
+        echo "class MainWindow(QMainWindow):" >> desktop/main.py
+        echo "    def __init__(self):" >> desktop/main.py
+        echo "        super().__init__()" >> desktop/main.py
+        echo "        self.setWindowTitle('Financial Risk & Consulting System - FRCS V5')" >> desktop/main.py
+        echo "        self.resize(600, 400)" >> desktop/main.py
+        echo "        central_widget = QWidget()" >> desktop/main.py
+        echo "        self.setCentralWidget(central_widget)" >> desktop/main.py
+        echo "        layout = QVBoxLayout(central_widget)" >> desktop/main.py
+        echo "        label = QLabel('أهلاً بك في نظام FRCS V5 للتحليل المالي والتقييم')" >> desktop/main.py
+        echo "        label.setAlignment(Qt.AlignCenter)" >> desktop/main.py
+        echo "        label.setStyleSheet('font-size: 18px; font-weight: bold; color: #1E3A8A;')" >> desktop/main.py
+        echo "        layout.addWidget(label)" >> desktop/main.py
+        echo "        sub_label = QLabel('الواجهة البرمجية تعمل بنجاح!')" >> desktop/main.py
+        echo "        sub_label.setAlignment(Qt.AlignCenter)" >> desktop/main.py
+        echo "        sub_label.setStyleSheet('font-size: 14px; color: #059669;')" >> desktop/main.py
+        echo "        layout.addWidget(sub_label)" >> desktop/main.py
+        echo "        btn = QPushButton('إغلاق التطبيق')" >> desktop/main.py
+        echo "        btn.clicked.connect(self.close)" >> desktop/main.py
+        echo "        btn.setStyleSheet('padding: 10px; font-size: 14px; background-color: #DC2626; color: white; border-radius: 5px;')" >> desktop/main.py
+        echo "        layout.addWidget(btn)" >> desktop/main.py
+        echo "if __name__ == '__main__':" >> desktop/main.py
+        echo "    app = QApplication(sys.argv)" >> desktop/main.py
+        echo "    window = MainWindow()" >> desktop/main.py
+        echo "    window.show()" >> desktop/main.py
+        echo "    sys.exit(app.exec())" >> desktop/main.py
+
     - name: Build Single Executable with PyInstaller
       run: |
         pyinstaller --noconfirm --onefile --windowed --name "FRCS_V5_App" desktop/main.py
