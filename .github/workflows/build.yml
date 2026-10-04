@@ -23,9 +23,16 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller PySide6 pandas numpy openpyxl
 
-    - name: Build Executable with PyInstaller
+    - name: Build Executable Safely
+      shell: powershell
       run: |
-        pyinstaller --noconfirm --onefile --name "FRCS_V5_Full_App" desktop/main.py
+        if (Test-Path "desktop/main.py") {
+            pyinstaller --noconfirm --onefile --name "FRCS_V5_Full_App" desktop/main.py
+        } elseif (Test-Path "main.py") {
+            pyinstaller --noconfirm --onefile --name "FRCS_V5_Full_App" main.py
+        } else {
+            Write-Error "main.py not found in root or desktop folder!"
+        }
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
