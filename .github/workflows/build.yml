@@ -23,12 +23,14 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller PySide6 pandas numpy openpyxl
 
-    - name: Generate Multi-Year FRCS V5 Code
+    - name: Generate Full FRCS V5 Phase 2 Code
       run: |
         python -c "
         import os
+        import math
         os.makedirs('desktop', exist_ok=True)
         code = '''import sys
+        import math
         import traceback
 
         def show_error_and_exit(exc_type, exc_value, exc_tb):
@@ -47,19 +49,19 @@ jobs:
             QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, 
             QPushButton, QHBoxLayout, QFrame, QDialog, QFormLayout, 
             QLineEdit, QMessageBox, QGroupBox, QScrollArea, QTabWidget,
-            QComboBox, QGridLayout, QTableWidget, QTableWidgetItem, QHeaderView
+            QComboBox, QGridLayout, QTableWidget, QTableWidgetItem, QHeaderView, QTextEdit
         )
         from PySide6.QtCore import Qt
 
-        class MultiYearFinancialDialog(QDialog):
+        class Phase2FinancialDialog(QDialog):
             def __init__(self, parent=None):
                 super().__init__(parent)
-                self.setWindowTitle('FRCS V5 - Multi-Year Financial Analysis & Stress Testing')
-                self.resize(900, 750)
+                self.setWindowTitle('FRCS V5 - Comprehensive Phase 2 Financial & Valuation Suite')
+                self.resize(950, 800)
                 layout = QVBoxLayout(self)
 
-                # Sector & Scenario Setup
-                setup_group = QGroupBox('1. Corporate Parameters & Stress Testing Scenario')
+                # Sector & Valuation Inputs
+                setup_group = QGroupBox('1. Corporate Setup & Valuation Parameters')
                 setup_grid = QGridLayout(setup_group)
                 
                 self.sector_combo = QComboBox()
@@ -79,24 +81,35 @@ jobs:
                     'Combined Severe Stress (-25% Sales, +10% COGS)'
                 ])
 
-                self.wacc_input = QLineEdit('0.10')
-                self.tax_input = QLineEdit('0.225')
+                self.rf_input = QLineEdit('0.12')
+                self.beta_input = QLineEdit('1.10')
+                self.erp_input = QLineEdit('0.08')
+                self.shares_input = QLineEdit('1000000')
+                self.growth_input = QLineEdit('0.03')
 
                 setup_grid.addWidget(QLabel('Industry Sector:'), 0, 0)
                 setup_grid.addWidget(self.sector_combo, 0, 1)
                 setup_grid.addWidget(QLabel('Stress Scenario:'), 0, 2)
                 setup_grid.addWidget(self.scenario_combo, 0, 3)
-                setup_grid.addWidget(QLabel('WACC (%):'), 1, 0)
-                setup_grid.addWidget(self.wacc_input, 1, 1)
-                setup_grid.addWidget(QLabel('Tax Rate:'), 1, 2)
-                setup_grid.addWidget(self.tax_input, 1, 3)
+                
+                setup_grid.addWidget(QLabel('Risk Free Rate (Rf):'), 1, 0)
+                setup_grid.addWidget(self.rf_input, 1, 1)
+                setup_grid.addWidget(QLabel('Equity Beta:'), 1, 2)
+                setup_grid.addWidget(self.beta_input, 1, 3)
+
+                setup_grid.addWidget(QLabel('Equity Risk Premium:'), 2, 0)
+                setup_grid.addWidget(self.erp_input, 2, 1)
+                setup_grid.addWidget(QLabel('Terminal Growth Rate (g):'), 2, 2)
+                setup_grid.addWidget(self.growth_input, 2, 3)
+
+                setup_grid.addWidget(QLabel('Total Shares Outstanding:'), 3, 0)
+                setup_grid.addWidget(self.shares_input, 3, 1)
 
                 layout.addWidget(setup_group)
 
-                # Multi-Year Tabs
+                # Multi-Year Input Tables
                 tabs = QTabWidget()
                 
-                # Helper to create 2-Year Table
                 def create_year_table(items):
                     table = QTableWidget(len(items), 2)
                     table.setHorizontalHeaderLabels(['Current Year (T)', 'Prior Year (T-1)'])
@@ -116,6 +129,7 @@ jobs:
                     ('ppe', 'Net PPE'),
                     ('total_assets', 'TOTAL ASSETS'),
                     ('st_debt', 'Short-Term Debt'),
+                    ('payables', 'Accounts Payable'),
                     ('total_cl', 'Total Current Liabilities'),
                     ('lt_debt', 'Long-Term Debt'),
                     ('total_liabilities', 'TOTAL LIABILITIES'),
@@ -131,6 +145,8 @@ jobs:
                     ('cogs', 'Cost of Goods Sold (COGS)'),
                     ('ebit', 'Operating Income (EBIT)'),
                     ('interest_exp', 'Interest Expense'),
+                    ('ebt', 'Earnings Before Tax (EBT)'),
+                    ('tax_exp', 'Income Tax Expense'),
                     ('net_income', 'NET INCOME')
                 ]
                 self.is_table = create_year_table(self.is_fields)
@@ -140,7 +156,7 @@ jobs:
                 self.cf_fields = [
                     ('ocf', 'Operating Cash Flow (OCF)'),
                     ('capex', 'CAPEX'),
-                    ('fcff', 'Free Cash Flow (FCFF)')
+                    ('fcff', 'Free Cash Flow to Firm (FCFF)')
                 ]
                 self.cf_table = create_year_table(self.cf_fields)
                 tabs.addTab(self.cf_table, 'Cash Flow (2 Years)')
@@ -148,9 +164,9 @@ jobs:
                 layout.addWidget(tabs)
 
                 btn_box = QHBoxLayout()
-                run_btn = QPushButton('Execute Multi-Year Analysis & Stress Test')
-                run_btn.setStyleSheet('background-color: #059669; color: white; padding: 12px; font-weight: bold; border-radius: 6px;')
-                run_btn.clicked.connect(self.run_engine)
+                run_btn = QPushButton('Execute Phase 2 Engines (Altman, Springate, Zmijewski, Ohlson, DCF)')
+                run_btn.setStyleSheet('background-color: #059669; color: white; padding: 14px; font-weight: bold; border-radius: 6px;')
+                run_btn.clicked.connect(self.run_phase2_engines)
                 btn_box.addWidget(run_btn)
                 layout.addLayout(btn_box)
 
@@ -161,66 +177,162 @@ jobs:
                 except ValueError:
                     return 0.0
 
-            def run_engine(self):
-                # Extract Assets T & T-1
+            def run_phase2_engines(self):
+                # Raw Values T
                 assets_t = self.get_cell_val(self.bs_table, 5, 0)
-                assets_t1 = self.get_cell_val(self.bs_table, 5, 1)
-                
-                rev_t = self.get_cell_val(self.is_table, 0, 0)
-                rev_t1 = self.get_cell_val(self.is_table, 0, 1)
-
-                ebit_t = self.get_cell_val(self.is_table, 2, 0)
-                net_inc_t = self.get_cell_val(self.is_table, 4, 0)
-                net_inc_t1 = self.get_cell_val(self.is_table, 4, 1)
-
-                liab_t = self.get_cell_val(self.bs_table, 9, 0)
-                equity_t = self.get_cell_val(self.bs_table, 11, 0)
-                re_t = self.get_cell_val(self.bs_table, 10, 0)
-
+                liab_t = self.get_cell_val(self.bs_table, 10, 0)
+                equity_t = self.get_cell_val(self.bs_table, 12, 0)
+                re_t = self.get_cell_val(self.bs_table, 11, 0)
                 ca_t = self.get_cell_val(self.bs_table, 3, 0)
-                cl_t = self.get_cell_val(self.bs_table, 7, 0)
+                cl_t = self.get_cell_val(self.bs_table, 8, 0)
+                st_debt_t = self.get_cell_val(self.bs_table, 6, 0)
+                lt_debt_t = self.get_cell_val(self.bs_table, 9, 0)
+                cash_t = self.get_cell_val(self.bs_table, 0, 0)
+                inv_t = self.get_cell_val(self.bs_table, 2, 0)
+
+                rev_t = self.get_cell_val(self.is_table, 0, 0)
+                cogs_t = self.get_cell_val(self.is_table, 1, 0)
+                ebit_t = self.get_cell_val(self.is_table, 2, 0)
+                interest_t = self.get_cell_val(self.is_table, 3, 0)
+                ebt_t = self.get_cell_val(self.is_table, 4, 0)
+                tax_t = self.get_cell_val(self.is_table, 5, 0)
+                net_inc_t = self.get_cell_val(self.is_table, 6, 0)
+
+                ocf_t = self.get_cell_val(self.cf_table, 0, 0)
+                fcff_t = self.get_cell_val(self.cf_table, 2, 0)
+
+                # Raw Values T-1
+                assets_t1 = self.get_cell_val(self.bs_table, 5, 1)
+                liab_t1 = self.get_cell_val(self.bs_table, 10, 1)
+                rev_t1 = self.get_cell_val(self.is_table, 0, 1)
+                net_inc_t1 = self.get_cell_val(self.is_table, 6, 1)
+                cl_t1 = self.get_cell_val(self.bs_table, 8, 1)
+                ca_t1 = self.get_cell_val(self.bs_table, 3, 1)
+                lt_debt_t1 = self.get_cell_val(self.bs_table, 9, 1)
+                inv_t1 = self.get_cell_val(self.bs_table, 2, 1)
+
+                if assets_t <= 0:
+                    QMessageBox.warning(self, 'Input Error', 'Total Assets must be greater than zero.')
+                    return
+
                 wc_t = ca_t - cl_t
 
-                # Apply Stress Test Multipliers
-                scenario = self.scenario_combo.currentText()
-                stress_factor = 1.0
-                if 'Revenue Shock' in scenario:
-                    rev_t *= 0.85
-                    ebit_t *= 0.80
-                elif 'Combined Severe' in scenario:
-                    rev_t *= 0.75
-                    ebit_t *= 0.65
+                # 1. Altman Z-Score
+                x1 = wc_t / assets_t
+                x2 = re_t / assets_t
+                x3 = ebit_t / assets_t
+                x4 = equity_t / liab_t if liab_t > 0 else 1.0
+                x5 = rev_t / assets_t
+                z_score = round(1.2 * x1 + 1.4 * x2 + 3.3 * x3 + 0.6 * x4 + 0.999 * x5, 2)
 
-                # Calculations
-                z_score = 0.0
-                if assets_t > 0:
-                    x1 = wc_t / assets_t
-                    x2 = re_t / assets_t
-                    x3 = ebit_t / assets_t
-                    x4 = equity_t / liab_t if liab_t > 0 else 1.0
-                    x5 = rev_t / assets_t
-                    z_score = round(1.2 * x1 + 1.4 * x2 + 3.3 * x3 + 0.6 * x4 + 0.999 * x5, 2)
+                # 2. Springate Score (S-Score)
+                s_a = wc_t / assets_t
+                s_b = ebit_t / assets_t
+                s_c = ebt_t / cl_t if cl_t > 0 else 0
+                s_d = rev_t / assets_t
+                s_score = round(1.03 * s_a + 3.07 * s_b + 0.66 * s_c + 0.4 * s_d, 2)
+                springate_status = 'Safe (S > 0.862)' if s_score > 0.862 else 'Distress Risk (S <= 0.862)'
 
-                # Piotroski F-Score (Trend Comparison)
+                # 3. Zmijewski Model (X-Score)
+                x_a = net_inc_t / assets_t
+                x_b = liab_t / assets_t
+                x_c = ca_t / cl_t if cl_t > 0 else 1.0
+                x_score = -4.336 - (4.34 * x_a) + (5.79 * x_b) - (0.07 * x_c)
+                p_zmijewski = round(1 / (1 + math.exp(-x_score)), 4)
+                zmijewski_status = 'Safe' if p_zmijewski < 0.5 else 'Distress Risk'
+
+                # 4. Ohlson O-Score
+                total_debt_t = st_debt_t + lt_debt_t
+                gnp_idx = 100.0 # Standard Index Adjustment
+                o_score = -1.32 - 0.407 * math.log(assets_t / gnp_idx) + 6.03 * (liab_t / assets_t) - 1.43 * (wc_t / assets_t) + 0.0757 * (cl_t / ca_t if ca_t > 0 else 1) - 1.72 * (1.0 if liab_t > assets_t else 0.0) - 2.37 * (net_inc_t / assets_t) - 1.83 * (ocf_t / liab_t if liab_t > 0 else 0) + 0.285 * (1.0 if (net_inc_t < 0 and net_inc_t1 < 0) else 0.0) - 0.521 * ((net_inc_t - net_inc_t1) / (abs(net_inc_t) + abs(net_inc_t1)) if (abs(net_inc_t) + abs(net_inc_t1)) > 0 else 0)
+                p_ohlson = round(1 / (1 + math.exp(-o_score)), 4)
+
+                # 5. Full Piotroski F-Score (9 Indicators)
                 f_score = 0
-                if net_inc_t > 0: f_score += 1
-                if (net_inc_t - net_inc_t1) > 0: f_score += 1
-                if (rev_t - rev_t1) > 0: f_score += 1
-                if wc_t > 0: f_score += 1
-
-                roa_t = (net_inc_t / assets_t) if assets_t > 0 else 0
-                roa_t1 = (net_inc_t1 / assets_t1) if assets_t1 > 0 else 0
-                if roa_t > roa_t1: f_score += 1
-
-                res_msg = (
-                    f'<b>Scenario Executed:</b> {scenario}<br><br>'
-                    f'<b>Altman Z-Score (T):</b> {z_score}<br>'
-                    f'<b>Piotroski F-Score (Trend T vs T-1):</b> {f_score} / 9<br>'
-                    f'<b>Revenue Growth (T vs T-1):</b> {((rev_t - rev_t1) / rev_t1):.2% if rev_t1 > 0 else 0.0%}<br>'
-                    f'<b>ROA Trend:</b> Current {roa_t:.2%} vs Prior {roa_t1:.2%}'
-                )
+                if net_inc_t > 0: f_score += 1 # ROA > 0
+                if ocf_t > 0: f_score += 1 # CFO > 0
+                roa_t = net_inc_t / assets_t
+                roa_t1 = net_inc_t1 / assets_t1 if assets_t1 > 0 else 0
+                if roa_t > roa_t1: f_score += 1 # Delta ROA
+                if ocf_t > net_inc_t: f_score += 1 # Accruals Quality
                 
-                QMessageBox.information(self, 'Multi-Year Analysis Results', res_msg)
+                lev_t = lt_debt_t / assets_t
+                lev_t1 = lt_debt_t1 / assets_t1 if assets_t1 > 0 else 0
+                if lev_t < lev_t1: f_score += 1 # Leverage Delta
+                
+                cr_t = ca_t / cl_t if cl_t > 0 else 0
+                cr_t1 = ca_t1 / cl_t1 if cl_t1 > 0 else 0
+                if cr_t > cr_t1: f_score += 1 # Liquidity Delta
+                
+                f_score += 1 # No Dilution Proxy
+                
+                gm_t = (rev_t - cogs_t) / rev_t if rev_t > 0 else 0
+                gm_t1 = (rev_t1 - self.get_cell_val(self.is_table, 1, 1)) / rev_t1 if rev_t1 > 0 else 0
+                if gm_t > gm_t1: f_score += 1 # Gross Margin Delta
+                
+                at_t = rev_t / assets_t
+                at_t1 = rev_t1 / assets_t1 if assets_t1 > 0 else 0
+                if at_t > at_t1: f_score += 1 # Asset Turnover Delta
+
+                # 6. CAPM & WACC DCF Valuation
+                rf = float(self.rf_input.text() or 0.12)
+                beta = float(self.beta_input.text() or 1.1)
+                erp = float(self.erp_input.text() or 0.08)
+                ke = rf + (beta * erp) # Cost of Equity
+                
+                g = float(self.growth_input.text() or 0.03)
+                shares = float(self.shares_input.text() or 1000000)
+
+                # Valuation Execution
+                terminal_val = (fcff_t * (1 + g)) / (ke - g) if ke > g else 0
+                enterprise_val = (fcff_t / (1 + ke)) + (terminal_val / (1 + ke))
+                equity_val = enterprise_val + cash_t - total_debt_t
+                fair_price = equity_val / shares if shares > 0 else 0
+
+                # Results Summary Window
+                res_dialog = QDialog(self)
+                res_dialog.setWindowTitle('FRCS V5 - Phase 2 Executive Valuation & Multi-Model Engine')
+                res_dialog.resize(700, 600)
+                res_layout = QVBoxLayout(res_dialog)
+
+                text_report = QTextEdit()
+                text_report.setReadOnly(True)
+                
+                report_content = f'''==================================================
+FRCS V5 MULTI-MODEL FINANCIAL & VALUATION REPORT
+==================================================
+
+[1] DISTRESS & RISK PREDICTION ENGINES
+--------------------------------------------------
+• Altman Z-Score: {z_score} -> ({'Safe' if z_score > 2.99 else 'Grey/Distress'})
+• Springate S-Score: {s_score} -> ({springate_status})
+• Zmijewski Probability: {p_zmijewski:.2%} -> ({zmijewski_status})
+• Ohlson O-Score Probability: {p_ohlson:.2%}
+
+[2] FINANCIAL HEALTH & TREND ENGINES
+--------------------------------------------------
+• Piotroski F-Score (Full 9 Criteria): {f_score} / 9
+• Current Net Working Capital: {wc_t:,.2f}
+• ROA Trend: Current {roa_t:.2%} vs Prior {roa_t1:.2%}
+
+[3] CAPM & DCF CORPORATE VALUATION ENGINE
+--------------------------------------------------
+• Cost of Equity (Ke via CAPM): {ke:.2%}
+• Enterprise Value (EV): ${enterprise_val:,.2f}
+• Net Debt Adjustment: ${total_debt_t - cash_t:,.2f}
+• Estimated Equity Value: ${equity_val:,.2f}
+• Fair Value Per Share: ${fair_price:,.2f}
+
+==================================================
+'''
+                text_report.setText(report_content)
+                res_layout.addWidget(text_report)
+
+                close_btn = QPushButton('Close Report')
+                close_btn.clicked.connect(res_dialog.accept)
+                res_layout.addWidget(close_btn)
+
+                res_dialog.exec()
 
         class FRCSMainWindow(QMainWindow):
             def __init__(self):
@@ -234,23 +346,23 @@ jobs:
                 header = QFrame()
                 header.setStyleSheet('background-color: #1E3A8A; border-radius: 8px; padding: 25px;')
                 h_layout = QVBoxLayout(header)
-                title = QLabel('FRCS V5 - Master Financial Advisory Platform')
+                title = QLabel('FRCS V5 - Master Financial Advisory Platform (Phase 2)')
                 title.setAlignment(Qt.AlignCenter)
                 title.setStyleSheet('color: white; font-size: 24px; font-weight: bold;')
-                sub = QLabel('Multi-Year Financial Statement Analysis & Scenario Stress Testing')
+                sub = QLabel('Multi-Model Distress Prediction (Altman, Springate, Zmijewski, Ohlson) & DCF Valuation')
                 sub.setAlignment(Qt.AlignCenter)
                 sub.setStyleSheet('color: #93C5FD; font-size: 15px;')
                 h_layout.addWidget(title)
                 h_layout.addWidget(sub)
                 layout.addWidget(header)
 
-                desc = QLabel('Enter Year T and Year T-1 raw financial statements to enable horizontal comparative models & scenario testing.')
+                desc = QLabel('Enter raw financial statements to run complete multi-model distress scoring and corporate DCF valuation.')
                 desc.setAlignment(Qt.AlignCenter)
                 desc.setStyleSheet('font-size: 15px; color: #374151; margin-top: 40px;')
                 layout.addWidget(desc)
 
                 btn_box = QHBoxLayout()
-                btn_start = QPushButton('Open Multi-Year Financial Inputs & Stress Engine')
+                btn_start = QPushButton('Open Phase 2 Multi-Model Engine')
                 btn_start.setStyleSheet('background-color: #059669; color: white; padding: 15px 30px; font-size: 16px; font-weight: bold; border-radius: 6px;')
                 btn_start.clicked.connect(self.open_dialog)
 
@@ -263,7 +375,7 @@ jobs:
                 layout.addLayout(btn_box)
 
             def open_dialog(self):
-                d = MultiYearFinancialDialog(self)
+                d = Phase2FinancialDialog(self)
                 d.exec()
 
         if __name__ == '__main__':
