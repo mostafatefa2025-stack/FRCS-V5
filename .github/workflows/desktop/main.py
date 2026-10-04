@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-class Phase2FinancialDialog(QDialog):
+class MultiModelFinancialDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("FRCS V5 - Comprehensive Multi-Model Financial & Valuation Suite")
@@ -128,9 +128,9 @@ class Phase2FinancialDialog(QDialog):
         layout.addWidget(tabs)
 
         btn_box = QHBoxLayout()
-        run_btn = QPushButton("Execute Full Engines (Altman, Springate, Zmijewski, Ohlson, DCF)")
+        run_btn = QPushButton("Execute Multi-Model Engines (Altman, Springate, Zmijewski, Ohlson, DCF)")
         run_btn.setStyleSheet("background-color: #059669; color: white; padding: 14px; font-weight: bold; border-radius: 6px;")
-        run_btn.clicked.connect(self.run_phase2_engines)
+        run_btn.clicked.connect(self.run_all_engines)
         btn_box.addWidget(run_btn)
         layout.addLayout(btn_box)
 
@@ -141,7 +141,7 @@ class Phase2FinancialDialog(QDialog):
         except ValueError:
             return 0.0
 
-    def run_phase2_engines(self):
+    def run_all_engines(self):
         assets_t = self.get_cell_val(self.bs_table, 5, 0)
         liab_t = self.get_cell_val(self.bs_table, 10, 0)
         equity_t = self.get_cell_val(self.bs_table, 12, 0)
@@ -164,9 +164,6 @@ class Phase2FinancialDialog(QDialog):
         assets_t1 = self.get_cell_val(self.bs_table, 5, 1)
         rev_t1 = self.get_cell_val(self.is_table, 0, 1)
         net_inc_t1 = self.get_cell_val(self.is_table, 6, 1)
-        cl_t1 = self.get_cell_val(self.bs_table, 8, 1)
-        ca_t1 = self.get_cell_val(self.bs_table, 3, 1)
-        lt_debt_t1 = self.get_cell_val(self.bs_table, 9, 1)
 
         if assets_t <= 0:
             QMessageBox.warning(self, "Input Error", "Total Assets must be greater than zero.")
@@ -174,6 +171,7 @@ class Phase2FinancialDialog(QDialog):
 
         wc_t = ca_t - cl_t
 
+        # 1. Altman Z-Score
         x1 = wc_t / assets_t
         x2 = re_t / assets_t
         x3 = ebit_t / assets_t
@@ -181,19 +179,21 @@ class Phase2FinancialDialog(QDialog):
         x5 = rev_t / assets_t
         z_score = round(1.2 * x1 + 1.4 * x2 + 3.3 * x3 + 0.6 * x4 + 0.999 * x5, 2)
 
+        # 2. Springate Score
         s_a = wc_t / assets_t
         s_b = ebit_t / assets_t
         s_c = ebt_t / cl_t if cl_t > 0 else 0
         s_d = rev_t / assets_t
         s_score = round(1.03 * s_a + 3.07 * s_b + 0.66 * s_c + 0.4 * s_d, 2)
-        springate_status = "Safe (S > 0.862)" if s_score > 0.862 else "Distress Risk (S <= 0.862)"
 
+        # 3. Zmijewski Model
         x_a = net_inc_t / assets_t
         x_b = liab_t / assets_t
         x_c = ca_t / cl_t if cl_t > 0 else 1.0
         x_score = -4.336 - (4.34 * x_a) + (5.79 * x_b) - (0.07 * x_c)
         p_zmijewski = round(1 / (1 + math.exp(-x_score)), 4)
 
+        # 4. Piotroski F-Score
         f_score = 0
         if net_inc_t > 0: f_score += 1
         if ocf_t > 0: f_score += 1
@@ -202,6 +202,7 @@ class Phase2FinancialDialog(QDialog):
         if roa_t > roa_t1: f_score += 1
         if ocf_t > net_inc_t: f_score += 1
 
+        # 5. CAPM & DCF Valuation
         rf = float(self.rf_input.text() or 0.12)
         beta = float(self.beta_input.text() or 1.1)
         erp = float(self.erp_input.text() or 0.08)
@@ -231,8 +232,8 @@ FRCS V5 MULTI-MODEL FINANCIAL & VALUATION REPORT
 [1] DISTRESS & RISK PREDICTION ENGINES
 --------------------------------------------------
 • Altman Z-Score: {z_score} -> ({'Safe' if z_score > 2.99 else 'Grey/Distress'})
-• Springate S-Score: {s_score} -> ({springate_status})
-• Zmijewski Probability: {p_zmijewski:.2%}
+• Springate S-Score: {s_score} -> ({'Safe' if s_score > 0.862 else 'Distress Risk'})
+• Zmijewski Distress Probability: {p_zmijewski:.2%}
 
 [2] FINANCIAL HEALTH & TREND ENGINES
 --------------------------------------------------
@@ -300,7 +301,7 @@ class FRCSMainWindow(QMainWindow):
         layout.addLayout(btn_box)
 
     def open_dialog(self):
-        d = Phase2FinancialDialog(self)
+        d = MultiModelFinancialDialog(self)
         d.exec()
 
 if __name__ == "__main__":
