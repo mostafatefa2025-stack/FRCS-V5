@@ -23,13 +23,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller PySide6 pandas numpy openpyxl
 
-    - name: Build Main Application
+    - name: Build Executable from Current Location
       run: |
-        if (Test-Path "desktop/main.py") {
-            pyinstaller --noconfirm --onefile --name "FRCS_V5_Full_App" desktop/main.py
-        } else {
-            pyinstaller --noconfirm --onefile --name "FRCS_V5_Full_App" main.py
-        }
+        pyinstaller --noconfirm --onefile --name "FRCS_V5_Full_App" .github/workflows/desktop/main.py
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
