@@ -23,32 +23,13 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller PySide6 pandas numpy openpyxl
 
-    - name: Create Python Script
-      shell: cmd
+    - name: Build Main Application
       run: |
-        echo import sys > app.py
-        echo from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QPushButton, QMessageBox >> app.py
-        echo class MainWindow(QMainWindow): >> app.py
-        echo     def __init__(self): >> app.py
-        echo         super().__init__() >> app.py
-        echo         self.setWindowTitle('FRCS V5 - Financial Advisory Platform') >> app.py
-        echo         self.resize(800, 500) >> app.py
-        echo         widget = QWidget() >> app.py
-        echo         layout = QVBoxLayout(widget) >> app.py
-        echo         lbl = QLabel('FRCS V5 Engine System Ready') >> app.py
-        echo         btn = QPushButton('Run Analysis') >> app.py
-        echo         btn.clicked.connect(lambda: QMessageBox.information(self, 'FRCS V5', 'System Operating Normally')) >> app.py
-        echo         layout.addWidget(lbl) >> app.py
-        echo         layout.addWidget(btn) >> app.py
-        echo         self.setCentralWidget(widget) >> app.py
-        echo app = QApplication(sys.argv) >> app.py
-        echo win = MainWindow() >> app.py
-        echo win.show() >> app.py
-        echo sys.exit(app.exec()) >> app.py
-
-    - name: Build Executable
-      run: |
-        pyinstaller --noconfirm --onefile --name "FRCS_V5_Full_App" app.py
+        if (Test-Path "desktop/main.py") {
+            pyinstaller --noconfirm --onefile --name "FRCS_V5_Full_App" desktop/main.py
+        } else {
+            pyinstaller --noconfirm --onefile --name "FRCS_V5_Full_App" main.py
+        }
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
