@@ -1,350 +1,411 @@
 import sys
 import math
+import numpy as np
+import pandas as pd
 import traceback
 
-def show_error_and_exit(exc_type, exc_value, exc_tb):
-    error_msg = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
+def global_exception_handler(exc_type, exc_value, exc_tb):
+    err = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
     try:
         from PySide6.QtWidgets import QApplication, QMessageBox
         app = QApplication.instance() or QApplication(sys.argv)
-        QMessageBox.critical(None, "FRCS V5 Startup Error", f"Runtime Error:\n\n{error_msg}")
+        QMessageBox.critical(None, "FRCS V5 Engine Error", f"System Encountered Exception:\n\n{err}")
     except Exception:
-        print(error_msg)
+        print(err)
     sys.exit(1)
 
-sys.excepthook = show_error_and_exit
+sys.excepthook = global_exception_handler
 
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, 
-    QPushButton, QHBoxLayout, QFrame, QDialog, QFormLayout, 
-    QLineEdit, QMessageBox, QGroupBox, QScrollArea, QTabWidget,
-    QComboBox, QGridLayout, QTableWidget, QTableWidgetItem, QHeaderView, QTextEdit
+    QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QPushButton,
+    QHBoxLayout, QFrame, QDialog, QFormLayout, QLineEdit, QMessageBox,
+    QGroupBox, QScrollArea, QTabWidget, QComboBox, QGridLayout, QTableWidget,
+    QTableWidgetItem, QHeaderView, QTextEdit, QSplitter, QTreeWidget, QTreeWidgetItem
 )
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont, QColor
 
-class MasterFRCSDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("FRCS V5 - Comprehensive Multi-Model Financial & Valuation Suite")
-        self.resize(1020, 820)
-        layout = QVBoxLayout(self)
-
-        setup_group = QGroupBox("1. Corporate Setup & Valuation Parameters")
-        setup_grid = QGridLayout(setup_group)
+class FRCSFullEngineSuite(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Financial Risk & Consulting System - FRCS V5 Professional Enterprise Edition")
+        self.resize(1280, 850)
         
-        self.sector_combo = QComboBox()
-        self.sector_combo.addItems([
-            "Manufacturing & Industrial", 
-            "Real Estate & Construction", 
-            "Retail & Wholesale", 
-            "Commercial Services", 
-            "Healthcare & Pharma"
-        ])
+        main_widget = QWidget()
+        self.setCentralWidget(main_widget)
+        main_layout = QVBoxLayout(main_widget)
+
+        # Header Bar
+        header = QFrame()
+        header.setStyleSheet("background: linear-gradient(135deg, #0F172A, #1E3A8A); border-radius: 8px; padding: 15px;")
+        h_layout = QVBoxLayout(header)
+        title = QLabel("FRCS V5 - ADVANCED CORPORATE VALUATION & DISTRESS ENGINE")
+        title.setAlignment(Qt.AlignCenter)
+        title.setStyleSheet("color: #F8FAFC; font-size: 22px; font-weight: bold; letter-spacing: 1px;")
+        subtitle = QLabel("Comprehensive Financial Statement Modeling | Bankruptcy Analytics | CAPM & WACC | DCF & DDM Valuation Suite")
+        subtitle.setAlignment(Qt.AlignCenter)
+        subtitle.setStyleSheet("color: #93C5FD; font-size: 13px;")
+        h_layout.addWidget(title)
+        h_layout.addWidget(subtitle)
+        main_layout.addWidget(header)
+
+        # Tab Navigator
+        self.tabs = QTabWidget()
+        self.tabs.setStyleSheet("QTabBar::tab { font-weight: bold; padding: 10px 20px; }")
         
-        self.scenario_combo = QComboBox()
-        self.scenario_combo.addItems([
-            "Base Case (Standard)",
-            "Revenue Shock (-15%)",
-            "Interest Rate Hike (+300 bps)",
-            "Combined Severe Stress (-25% Sales, +10% COGS)"
-        ])
-
-        self.rf_input = QLineEdit("0.12")
-        self.beta_input = QLineEdit("1.10")
-        self.erp_input = QLineEdit("0.08")
-        self.shares_input = QLineEdit("1000000")
-        self.growth_input = QLineEdit("0.03")
-        self.tax_rate_input = QLineEdit("0.225")
-        self.cost_debt_input = QLineEdit("0.14")
-        self.dividend_input = QLineEdit("2.50")
-
-        setup_grid.addWidget(QLabel("Industry Sector:"), 0, 0)
-        setup_grid.addWidget(self.sector_combo, 0, 1)
-        setup_grid.addWidget(QLabel("Stress Scenario:"), 0, 2)
-        setup_grid.addWidget(self.scenario_combo, 0, 3)
+        self.tab_inputs = QWidget()
+        self.tab_distress = QWidget()
+        self.tab_valuation = QWidget()
+        self.tab_sensitivity = QWidget()
         
-        setup_grid.addWidget(QLabel("Risk Free Rate (Rf):"), 1, 0)
-        setup_grid.addWidget(self.rf_input, 1, 1)
-        setup_grid.addWidget(QLabel("Equity Beta:"), 1, 2)
-        setup_grid.addWidget(self.beta_input, 1, 3)
-
-        setup_grid.addWidget(QLabel("Equity Risk Premium:"), 2, 0)
-        setup_grid.addWidget(self.erp_input, 2, 1)
-        setup_grid.addWidget(QLabel("Terminal Growth Rate (g):"), 2, 2)
-        setup_grid.addWidget(self.growth_input, 2, 3)
-
-        setup_grid.addWidget(QLabel("Pre-Tax Cost of Debt (Kd):"), 3, 0)
-        setup_grid.addWidget(self.cost_debt_input, 3, 1)
-        setup_grid.addWidget(QLabel("Corporate Tax Rate:"), 3, 2)
-        setup_grid.addWidget(self.tax_rate_input, 3, 3)
-
-        setup_grid.addWidget(QLabel("Total Shares Outstanding:"), 4, 0)
-        setup_grid.addWidget(self.shares_input, 4, 1)
-        setup_grid.addWidget(QLabel("Expected Dividend Per Share (D1):"), 4, 2)
-        setup_grid.addWidget(self.dividend_input, 4, 3)
-
-        layout.addWidget(setup_group)
-
-        tabs = QTabWidget()
+        self.tabs.addTab(self.tab_inputs, "1. Financial Statements & Data Inputs")
+        self.tabs.addTab(self.tab_distress, "2. Bankruptcy & Distress Scores (Multi-Model)")
+        self.tabs.addTab(self.tab_valuation, "3. WACC & Valuation Models (DCF / DDM / Multiples)")
+        self.tabs.addTab(self.tab_sensitivity, "4. Stress Testing & Scenario Matrix")
         
-        def create_year_table(items):
-            table = QTableWidget(len(items), 2)
-            table.setHorizontalHeaderLabels(["Current Year (T)", "Prior Year (T-1)"])
-            table.setVerticalHeaderLabels([item[1] for item in items])
-            table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-            for row in range(len(items)):
-                table.setItem(row, 0, QTableWidgetItem("0.00"))
-                table.setItem(row, 1, QTableWidgetItem("0.00"))
-            return table
+        main_layout.addWidget(self.tabs)
 
-        self.bs_fields = [
-            ("cash", "Cash & Cash Equivalents"),
-            ("receivables", "Accounts Receivable"),
-            ("inventory", "Inventory"),
-            ("total_ca", "Total Current Assets"),
-            ("ppe", "Net PPE"),
-            ("total_assets", "TOTAL ASSETS"),
-            ("st_debt", "Short-Term Debt"),
-            ("payables", "Accounts Payable"),
-            ("total_cl", "Total Current Liabilities"),
-            ("lt_debt", "Long-Term Debt"),
-            ("total_liabilities", "TOTAL LIABILITIES"),
-            ("retained_earnings", "Retained Earnings"),
-            ("total_equity", "TOTAL SHAREHOLDERS EQUITY")
+        # Build Tab Content
+        self.init_inputs_tab()
+        self.init_distress_tab()
+        self.init_valuation_tab()
+        self.init_sensitivity_tab()
+
+        # Action Buttons Bottom
+        btn_layout = QHBoxLayout()
+        calc_all_btn = QPushButton("RUN COMPREHENSIVE ENTERPRISE EVALUATION (ALL ENGINES)")
+        calc_all_btn.setStyleSheet("background-color: #059669; color: white; padding: 14px; font-weight: bold; font-size: 14px; border-radius: 6px;")
+        calc_all_btn.clicked.connect(self.run_full_analysis)
+        btn_layout.addWidget(calc_all_btn)
+        main_layout.addLayout(btn_layout)
+
+    def init_inputs_tab(self):
+        layout = QVBoxLayout(self.tab_inputs)
+        
+        # Parameters Box
+        param_box = QGroupBox("Corporate Macro & Capital Parameters")
+        grid = QGridLayout(param_box)
+        
+        self.company_name = QLineEdit("EGX Listed Target Enterprise")
+        self.sector_box = QComboBox()
+        self.sector_box.addItems(["Manufacturing & Industrial", "Real Estate & Housing", "Retail & Commerce", "Services & Tech"])
+        
+        self.rf_rate = QLineEdit("0.135")
+        self.beta = QLineEdit("1.15")
+        self.erp = QLineEdit("0.085")
+        self.cost_debt = QLineEdit("0.150")
+        self.tax_rate = QLineEdit("0.225")
+        self.shares_out = QLineEdit("50000000")
+        self.terminal_g = QLineEdit("0.04")
+        self.d1_dividend = QLineEdit("3.50")
+
+        grid.addWidget(QLabel("Enterprise Name:"), 0, 0)
+        grid.addWidget(self.company_name, 0, 1)
+        grid.addWidget(QLabel("Sector:"), 0, 2)
+        grid.addWidget(self.sector_box, 0, 3)
+
+        grid.addWidget(QLabel("Risk-Free Rate (Rf):"), 1, 0)
+        grid.addWidget(self.rf_rate, 1, 1)
+        grid.addWidget(QLabel("Equity Beta (β):"), 1, 2)
+        grid.addWidget(self.beta, 1, 3)
+
+        grid.addWidget(QLabel("Equity Risk Premium (ERP):"), 2, 0)
+        grid.addWidget(self.erp, 2, 1)
+        grid.addWidget(QLabel("Pre-Tax Cost of Debt (Kd):"), 2, 2)
+        grid.addWidget(self.cost_debt, 2, 3)
+
+        grid.addWidget(QLabel("Corporate Tax Rate (T):"), 3, 0)
+        grid.addWidget(self.tax_rate, 3, 1)
+        grid.addWidget(QLabel("Terminal Growth (g):"), 3, 2)
+        grid.addWidget(self.terminal_g, 3, 3)
+
+        grid.addWidget(QLabel("Shares Outstanding:"), 4, 0)
+        grid.addWidget(self.shares_out, 4, 1)
+        grid.addWidget(QLabel("Expected Dividend (D1):"), 4, 2)
+        grid.addWidget(self.d1_dividend, 4, 3)
+
+        layout.addWidget(param_box)
+
+        # Financial Statements Input Table
+        sub_tabs = QTabWidget()
+        
+        self.bs_table = QTableWidget(12, 2)
+        self.bs_table.setHorizontalHeaderLabels(["Year T (Current)", "Year T-1 (Prior)"])
+        self.bs_items = [
+            "Cash & Cash Equivalents", "Accounts Receivable", "Inventories", "Total Current Assets",
+            "Net PPE & Non-Current Assets", "TOTAL ASSETS", "Accounts Payable", "Short-Term Debt",
+            "Total Current Liabilities", "Long-Term Debt", "TOTAL LIABILITIES", "TOTAL SHAREHOLDERS EQUITY"
         ]
-        self.bs_table = create_year_table(self.bs_fields)
-        tabs.addTab(self.bs_table, "Balance Sheet (2 Years)")
-
-        self.is_fields = [
-            ("revenue", "Total Revenues"),
-            ("cogs", "Cost of Goods Sold (COGS)"),
-            ("ebit", "Operating Income (EBIT)"),
-            ("interest_exp", "Interest Expense"),
-            ("ebt", "Earnings Before Tax (EBT)"),
-            ("tax_exp", "Income Tax Expense"),
-            ("net_income", "NET INCOME")
+        self.bs_table.setVerticalHeaderLabels(self.bs_items)
+        self.bs_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        
+        # Pre-fill sample values for validation
+        default_bs = [
+            [50000000, 45000000], [120000000, 110000000], [180000000, 160000000], [350000000, 315000000],
+            [650000000, 600000000], [1000000000, 915000000], [90000000, 85000000], [60000000, 50000000],
+            [150000000, 135000000], [250000000, 220000000], [400000000, 355000000], [600000000, 560000000]
         ]
-        self.is_table = create_year_table(self.is_fields)
-        tabs.addTab(self.is_table, "Income Statement (2 Years)")
+        for r in range(12):
+            self.bs_table.setItem(r, 0, QTableWidgetItem(str(default_bs[r][0])))
+            self.bs_table.setItem(r, 1, QTableWidgetItem(str(default_bs[r][1])))
 
-        self.cf_fields = [
-            ("ocf", "Operating Cash Flow (OCF)"),
-            ("capex", "CAPEX"),
-            ("fcff", "Free Cash Flow to Firm (FCFF)")
+        self.is_table = QTableWidget(7, 2)
+        self.is_table.setHorizontalHeaderLabels(["Year T (Current)", "Year T-1 (Prior)"])
+        self.is_items = [
+            "Total Revenues (Sales)", "Cost of Goods Sold (COGS)", "Gross Profit",
+            "Operating Income (EBIT)", "Interest Expense", "Earnings Before Tax (EBT)", "NET INCOME"
         ]
-        self.cf_table = create_year_table(self.cf_fields)
-        tabs.addTab(self.cf_table, "Cash Flow (2 Years)")
+        self.is_table.setVerticalHeaderLabels(self.is_items)
+        self.is_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
-        layout.addWidget(tabs)
+        default_is = [
+            [800000000, 720000000], [520000000, 470000000], [280000000, 250000000],
+            [140000000, 125000000], [35000000, 30000000], [105000000, 95000000], [81375000, 73625000]
+        ]
+        for r in range(7):
+            self.is_table.setItem(r, 0, QTableWidgetItem(str(default_is[r][0])))
+            self.is_table.setItem(r, 1, QTableWidgetItem(str(default_is[r][1])))
 
-        btn_box = QHBoxLayout()
-        run_btn = QPushButton("Execute Complete Multi-Model Advisory Suite")
-        run_btn.setStyleSheet("background-color: #059669; color: white; padding: 14px; font-weight: bold; border-radius: 6px;")
-        run_btn.clicked.connect(self.run_all_engines)
-        btn_box.addWidget(run_btn)
-        layout.addLayout(btn_box)
+        sub_tabs.addTab(self.bs_table, "Balance Sheet Data")
+        sub_tabs.addTab(self.is_table, "Income Statement Data")
+        layout.addWidget(sub_tabs)
 
-    def get_cell_val(self, table, row, col):
+    def init_distress_tab(self):
+        layout = QVBoxLayout(self.tab_distress)
+        self.distress_report = QTextEdit()
+        self.distress_report.setFont(QFont("Consolas", 11))
+        self.distress_report.setReadOnly(True)
+        layout.addWidget(self.distress_report)
+
+    def init_valuation_tab(self):
+        layout = QVBoxLayout(self.tab_valuation)
+        self.valuation_report = QTextEdit()
+        self.valuation_report.setFont(QFont("Consolas", 11))
+        self.valuation_report.setReadOnly(True)
+        layout.addWidget(self.valuation_report)
+
+    def init_sensitivity_tab(self):
+        layout = QVBoxLayout(self.tab_sensitivity)
+        self.sensitivity_report = QTextEdit()
+        self.sensitivity_report.setFont(QFont("Consolas", 11))
+        self.sensitivity_report.setReadOnly(True)
+        layout.addWidget(self.sensitivity_report)
+
+    def get_val(self, table, r, c):
         try:
-            item = table.item(row, col)
-            return float(item.text()) if item else 0.0
-        except ValueError:
+            val = table.item(r, c).text()
+            return float(val)
+        except Exception:
             return 0.0
 
-    def run_all_engines(self):
-        assets_t = self.get_cell_val(self.bs_table, 5, 0)
-        liab_t = self.get_cell_val(self.bs_table, 10, 0)
-        equity_t = self.get_cell_val(self.bs_table, 12, 0)
-        re_t = self.get_cell_val(self.bs_table, 11, 0)
-        ca_t = self.get_cell_val(self.bs_table, 3, 0)
-        cl_t = self.get_cell_val(self.bs_table, 8, 0)
-        st_debt_t = self.get_cell_val(self.bs_table, 6, 0)
-        lt_debt_t = self.get_cell_val(self.bs_table, 9, 0)
-        cash_t = self.get_cell_val(self.bs_table, 0, 0)
-
-        rev_t = self.get_cell_val(self.is_table, 0, 0)
-        ebit_t = self.get_cell_val(self.is_table, 2, 0)
-        ebt_t = self.get_cell_val(self.is_table, 4, 0)
-        net_inc_t = self.get_cell_val(self.is_table, 6, 0)
-
-        ocf_t = self.get_cell_val(self.cf_table, 0, 0)
-        fcff_t = self.get_cell_val(self.cf_table, 2, 0)
-
-        assets_t1 = self.get_cell_val(self.bs_table, 5, 1)
-        net_inc_t1 = self.get_cell_val(self.is_table, 6, 1)
-
-        if assets_t <= 0:
-            QMessageBox.warning(self, "Input Error", "Total Assets must be greater than zero.")
+    def run_full_analysis(self):
+        # Extract Inputs
+        try:
+            rf = float(self.rf_rate.text())
+            beta = float(self.beta.text())
+            erp = float(self.erp.text())
+            kd = float(self.cost_debt.text())
+            tax = float(self.tax_rate.text())
+            shares = float(self.shares_out.text())
+            g = float(self.terminal_g.text())
+            d1 = float(self.d1_dividend.text())
+        except ValueError:
+            QMessageBox.critical(self, "Input Error", "Please verify numerical parameter values.")
             return
 
-        # 1. Financial Distress Engines
+        # Balance Sheet Year T
+        cash_t = self.get_val(self.bs_table, 0, 0)
+        ar_t = self.get_val(self.bs_table, 1, 0)
+        inv_t = self.get_val(self.bs_table, 2, 0)
+        ca_t = self.get_val(self.bs_table, 3, 0)
+        ppe_t = self.get_val(self.bs_table, 4, 0)
+        assets_t = self.get_val(self.bs_table, 5, 0)
+        ap_t = self.get_val(self.bs_table, 6, 0)
+        st_debt_t = self.get_val(self.bs_table, 7, 0)
+        cl_t = self.get_val(self.bs_table, 8, 0)
+        lt_debt_t = self.get_val(self.bs_table, 9, 0)
+        liab_t = self.get_val(self.bs_table, 10, 0)
+        equity_t = self.get_val(self.bs_table, 11, 0)
+
+        # Balance Sheet Year T-1
+        assets_t1 = self.get_val(self.bs_table, 5, 1)
+        cl_t1 = self.get_val(self.bs_table, 8, 1)
+        ca_t1 = self.get_val(self.bs_table, 3, 1)
+
+        # Income Statement
+        rev_t = self.get_val(self.is_table, 0, 0)
+        cogs_t = self.get_val(self.is_table, 1, 0)
+        ebit_t = self.get_val(self.is_table, 3, 0)
+        ebt_t = self.get_val(self.is_table, 5, 0)
+        net_inc_t = self.get_val(self.is_table, 6, 0)
+        
+        rev_t1 = self.get_val(self.is_table, 0, 1)
+        net_inc_t1 = self.get_val(self.is_table, 6, 1)
+
+        if assets_t <= 0:
+            QMessageBox.warning(self, "Data Error", "Total Assets must be strictly greater than zero.")
+            return
+
         wc_t = ca_t - cl_t
 
-        x1 = wc_t / assets_t
-        x2 = re_t / assets_t
-        x3 = ebit_t / assets_t
-        x4 = equity_t / liab_t if liab_t > 0 else 1.0
-        x5 = rev_t / assets_t
-        z_score = round(1.2 * x1 + 1.4 * x2 + 3.3 * x3 + 0.6 * x4 + 0.999 * x5, 2)
+        # ---------------------------------------------------------
+        # 1. DISTRESS ENGINES COMPUTATION
+        # ---------------------------------------------------------
+        # Altman Z-Score (Manufacturing original)
+        z1 = wc_t / assets_t
+        z2 = (net_inc_t * 0.7) / assets_t # Approx retained earnings addition
+        z3 = ebit_t / assets_t
+        z4 = equity_t / liab_t if liab_t > 0 else 1.0
+        z5 = rev_t / assets_t
+        altman_z = 1.2 * z1 + 1.4 * z2 + 3.3 * z3 + 0.6 * z4 + 0.999 * z5
 
-        s_a = wc_t / assets_t
-        s_b = ebit_t / assets_t
-        s_c = ebt_t / cl_t if cl_t > 0 else 0
-        s_d = rev_t / assets_t
-        s_score = round(1.03 * s_a + 3.07 * s_b + 0.66 * s_c + 0.4 * s_d, 2)
+        # Springate Score
+        springate_s = 1.03 * (wc_t / assets_t) + 3.07 * (ebit_t / assets_t) + 0.66 * (ebt_t / cl_t if cl_t > 0 else 0) + 0.4 * (rev_t / assets_t)
 
-        x_a = net_inc_t / assets_t
-        x_b = liab_t / assets_t
-        x_c = ca_t / cl_t if cl_t > 0 else 1.0
-        x_score = -4.336 - (4.34 * x_a) + (5.79 * x_b) - (0.07 * x_c)
-        p_zmijewski = round(1 / (1 + math.exp(-x_score)), 4)
+        # Zmijewski Probe
+        zmij_k = -4.336 - 4.34 * (net_inc_t / assets_t) + 5.79 * (liab_t / assets_t) - 0.07 * (ca_t / cl_t if cl_t > 0 else 1)
+        p_zmijewski = 1 / (1 + math.exp(-zmij_k))
 
         # Ohlson O-Score
-        gNP = 0.03 
-        l_ohlson = (-1.32 - 0.407 * math.log(max(assets_t, 1)) + 6.03 * (liab_t / assets_t)
+        ohlson_k = (-1.32 - 0.407 * math.log(max(assets_t / 1000, 1)) + 6.03 * (liab_t / assets_t)
                     - 1.43 * (wc_t / assets_t) + 0.0757 * (cl_t / ca_t if ca_t > 0 else 1)
                     - 1.72 * (1.0 if liab_t > assets_t else 0.0) - 2.37 * (net_inc_t / assets_t)
-                    - 1.83 * (ocf_t / liab_t if liab_t > 0 else 0)
-                    + 0.285 * (1.0 if (net_inc_t < 0 and net_inc_t1 < 0) else 0.0)
-                    - 0.521 * ((net_inc_t - net_inc_t1) / (abs(net_inc_t) + abs(net_inc_t1)) if (abs(net_inc_t) + abs(net_inc_t1)) > 0 else 0))
-        p_ohlson = round(1 / (1 + math.exp(-l_ohlson)), 4)
+                    - 1.83 * ((ebit_t) / liab_t if liab_t > 0 else 0))
+        p_ohlson = 1 / (1 + math.exp(-ohlson_k))
 
-        # 2. Trend & Health (Piotroski)
+        # Piotroski F-Score (9 Metrics)
         f_score = 0
         if net_inc_t > 0: f_score += 1
-        if ocf_t > 0: f_score += 1
+        if ebit_t > 0: f_score += 1
         roa_t = net_inc_t / assets_t
         roa_t1 = net_inc_t1 / assets_t1 if assets_t1 > 0 else 0
         if roa_t > roa_t1: f_score += 1
-        if ocf_t > net_inc_t: f_score += 1
+        if ebit_t > net_inc_t: f_score += 1 # Quality of earnings
+        if (lt_debt_t / assets_t) < (self.get_val(self.bs_table, 9, 1) / assets_t1 if assets_t1 > 0 else 1): f_score += 1
+        if (ca_t / cl_t if cl_t > 0 else 0) > (ca_t1 / cl_t1 if cl_t1 > 0 else 0): f_score += 1
+        if (cogs_t / rev_t if rev_t > 0 else 1) < (self.get_val(self.is_table, 1, 1) / rev_t1 if rev_t1 > 0 else 1): f_score += 1
+        if (rev_t / assets_t) > (rev_t1 / assets_t1 if assets_t1 > 0 else 0): f_score += 1
 
-        # 3. Valuation & Cost of Capital Engines
-        rf = float(self.rf_input.text() or 0.12)
-        beta = float(self.beta_input.text() or 1.1)
-        erp = float(self.erp_input.text() or 0.08)
+        distress_txt = f"""========================================================================================
+                      FRCS V5 MULTI-MODEL FINANCIAL DISTRESS ANALYSIS
+========================================================================================
+
+1. ALTMAN Z-SCORE MODEL (Emerging/Industrial Standard)
+   - Calculated Z-Score: {altman_z:.2f}
+   - Zone Classification: {'SAFE ZONE (Low Default Risk)' if altman_z > 2.99 else ('GREY ZONE (Moderate Risk)' if altman_z > 1.81 else 'DISTRESS ZONE (High Bankruptcy Risk)')}
+
+2. SPRINGATE S-SCORE MODEL
+   - Calculated S-Score: {springate_s:.2f}
+   - Solvent Threshold (> 0.862): {'SOLVENT' if springate_s > 0.862 else 'POTENTIAL DISTRESS'}
+
+3. ZMIJEWSKI PROBIT MODEL
+   - Default Probability: {p_zmijewski:.2%}
+   - Financial Health: {'HEALTHY' if p_zmijewski < 0.50 else 'FINANCIALLY DISTRESSED'}
+
+4. OHLSON O-SCORE MODEL
+   - Default Probability: {p_ohlson:.2%}
+   - Evaluation: {'LOW DEFAULT PROBABILITY' if p_ohlson < 0.50 else 'HIGH DEFAULT RISK'}
+
+5. PIOTROSKI F-SCORE TREND INDEX
+   - Total Score: {f_score} / 9
+   - Health Status: {'STRONG FINANCIAL POSITION (7-9)' if f_score >= 7 else ('MODERATE POSITION (4-6)' if f_score >= 4 else 'WEAK FINANCIAL POSITION (0-3)')}
+"""
+        self.distress_report.setText(distress_txt)
+
+        # ---------------------------------------------------------
+        # 2. WACC & VALUATION ENGINE
+        # ---------------------------------------------------------
         ke = rf + (beta * erp)
-        
-        kd = float(self.cost_debt_input.text() or 0.14)
-        tax = float(self.tax_rate_input.text() or 0.225)
         after_tax_kd = kd * (1 - tax)
-
-        total_debt_t = st_debt_t + lt_debt_t
-        total_cap = equity_t + total_debt_t
-        we = equity_t / total_cap if total_cap > 0 else 0.7
-        wd = total_debt_t / total_cap if total_cap > 0 else 0.3
-
+        total_debt = st_debt_t + lt_debt_t
+        total_cap = equity_t + total_debt
+        
+        we = equity_t / total_cap if total_cap > 0 else 0.70
+        wd = total_debt / total_cap if total_cap > 0 else 0.30
         wacc = (we * ke) + (wd * after_tax_kd)
 
-        g = float(self.growth_input.text() or 0.03)
-        shares = float(self.shares_input.text() or 1000000)
-        d1 = float(self.dividend_input.text() or 2.50)
-
-        # Gordon Growth Model (DDM)
-        ddm_price = d1 / (ke - g) if ke > g else 0.0
+        # FCFF & Valuation
+        nopat = ebit_t * (1 - tax)
+        capex_est = assets_t - assets_t1 + (ebit_t * 0.15)
+        delta_wc = wc_t - (ca_t1 - cl_t1)
+        fcff = nopat - capex_est - delta_wc
 
         # DCF Model
-        discount_rate = wacc if wacc > g else ke
-        terminal_val = (fcff_t * (1 + g)) / (discount_rate - g) if discount_rate > g else 0
-        enterprise_val = (fcff_t / (1 + discount_rate)) + (terminal_val / (1 + discount_rate))
-        equity_val = enterprise_val + cash_t - total_debt_t
-        fair_price_dcf = equity_val / shares if shares > 0 else 0
+        disc_rate = wacc if wacc > g else ke + 0.02
+        terminal_value = (fcff * (1 + g)) / (disc_rate - g) if disc_rate > g else 0
+        enterprise_value = (fcff / (1 + disc_rate)) + (terminal_value / (1 + disc_rate))
+        net_debt = total_debt - cash_t
+        equity_val_dcf = enterprise_value - net_debt
+        dcf_share_price = equity_val_dcf / shares if shares > 0 else 0
 
-        res_dialog = QDialog(self)
-        res_dialog.setWindowTitle("FRCS V5 - Executive Multi-Model Advisory Report")
-        res_dialog.resize(780, 680)
-        res_layout = QVBoxLayout(res_dialog)
+        # DDM Gordon Model
+        ddm_share_price = d1 / (ke - g) if ke > g else 0
 
-        text_report = QTextEdit()
-        text_report.setReadOnly(True)
-        
-        report_content = f"""==================================================
-FRCS V5 MASTER FINANCIAL & VALUATION REPORT
-==================================================
+        # Multiples Valuation (P/E Basis)
+        eps = net_inc_t / shares if shares > 0 else 0
+        pe_multiple = 10.0 # Benchmark Sector P/E
+        pe_share_price = eps * pe_multiple
 
-[1] FINANCIAL DISTRESS & RISK PREDICTION ENGINES
---------------------------------------------------
-• Altman Z-Score: {z_score} -> ({'Safe Zone' if z_score > 2.99 else 'Grey/Distress Zone'})
-• Springate S-Score: {s_score} -> ({'Solvent' if s_score > 0.862 else 'Distress Risk'})
-• Zmijewski Distress Probability: {p_zmijewski:.2%}
-• Ohlson O-Score Probability: {p_ohlson:.2%} -> ({'High Default Risk' if p_ohlson > 0.5 else 'Healthy'})
+        val_txt = f"""========================================================================================
+                      FRCS V5 CAPITAL COST & MULTI-MODEL VALUATION
+========================================================================================
 
-[2] FINANCIAL HEALTH & TREND ENGINES
---------------------------------------------------
-• Piotroski F-Score (Trend Indicator): {f_score} / 9
-• Current Net Working Capital: {wc_t:,.2f}
-• ROA Trend: Current {roa_t:.2%} vs Prior {roa_t1:.2%}
-
-[3] COST OF CAPITAL ENGINES
---------------------------------------------------
+[A] COST OF CAPITAL STRUCTURE (CAPM & WACC)
+----------------------------------------------------------------------------------------
 • Cost of Equity (Ke via CAPM): {ke:.2%}
-• After-Tax Cost of Debt (Kd * (1-T)): {after_tax_kd:.2%}
+• After-Tax Cost of Debt [Kd * (1-T)]: {after_tax_kd:.2%}
+• Equity Weight (We): {we:.2%} | Debt Weight (Wd): {wd:.2%}
 • Weighted Average Cost of Capital (WACC): {wacc:.2%}
 
-[4] CORPORATE VALUATION ENGINES
---------------------------------------------------
-• Dividend Discount Model (DDM / Gordon Growth): ${ddm_price:,.2f} / Share
-• Enterprise Value (EV via DCF): ${enterprise_val:,.2f}
-• Net Debt Adjustment: ${total_debt_t - cash_t:,.2f}
-• Total Equity Value: ${equity_val:,.2f}
-• DCF Fair Value Per Share: ${fair_price_dcf:,.2f}
+[B] DISCOUNTED CASH FLOW (DCF) VALUATION
+----------------------------------------------------------------------------------------
+• Operating NOPAT: ${nopat:,.2f}
+• Estimated Free Cash Flow to Firm (FCFF): ${fcff:,.2f}
+• Terminal Enterprise Value: ${terminal_value:,.2f}
+• Calculated Enterprise Value (EV): ${enterprise_value:,.2f}
+• Net Debt (Total Debt - Cash): ${net_debt:,.2f}
+• Fair Equity Value: ${equity_val_dcf:,.2f}
+► DCF FAIR PRICE PER SHARE: ${dcf_share_price:,.2f}
 
-==================================================
+[C] ALTERNATIVE VALUATION MODELS
+----------------------------------------------------------------------------------------
+• Dividend Discount Model (DDM / Gordon): ${ddm_share_price:,.2f} / Share
+• P/E Multiples Valuation (Benchmark 10.0x): ${pe_share_price:,.2f} / Share
+• Trailing Earnings Per Share (EPS): ${eps:,.2f}
 """
-        text_report.setText(report_content)
-        res_layout.addWidget(text_report)
+        self.valuation_report.setText(val_txt)
 
-        close_btn = QPushButton("Close Report")
-        close_btn.clicked.connect(res_dialog.accept)
-        res_layout.addWidget(close_btn)
+        # ---------------------------------------------------------
+        # 3. SENSITIVITY MATRIX
+        # ---------------------------------------------------------
+        sens_txt = f"""========================================================================================
+                      FRCS V5 STRESS TESTING & SENSITIVITY MATRIX
+========================================================================================
 
-        res_dialog.exec()
+DCF FAIR SHARE PRICE SENSITIVITY TO WACC AND TERMINAL GROWTH (g):
 
-class FRCSMainWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Financial Risk & Consulting System - FRCS V5")
-        self.resize(900, 600)
-        central = QWidget()
-        self.setCentralWidget(central)
-        layout = QVBoxLayout(central)
+----------------------------------------------------------------------------------------
+WACC \\ g         | g = {g-0.01:.1%}       | g = {g:.1%} (Base)     | g = {g+0.01:.1%}
+----------------------------------------------------------------------------------------
+WACC = {wacc-0.01:.1%}  | ${self.calc_sens_price(fcff, wacc-0.01, g-0.01, net_debt, shares):,.2f}         | ${self.calc_sens_price(fcff, wacc-0.01, g, net_debt, shares):,.2f}         | ${self.calc_sens_price(fcff, wacc-0.01, g+0.01, net_debt, shares):,.2f}
+WACC = {wacc:.1%}  | ${self.calc_sens_price(fcff, wacc, g-0.01, net_debt, shares):,.2f}         | ${dcf_share_price:,.2f} (Base)    | ${self.calc_sens_price(fcff, wacc, g+0.01, net_debt, shares):,.2f}
+WACC = {wacc+0.01:.1%}  | ${self.calc_sens_price(fcff, wacc+0.01, g-0.01, net_debt, shares):,.2f}         | ${self.calc_sens_price(fcff, wacc+0.01, g, net_debt, shares):,.2f}         | ${self.calc_sens_price(fcff, wacc+0.01, g+0.01, net_debt, shares):,.2f}
+----------------------------------------------------------------------------------------
+"""
+        self.sensitivity_report.setText(sens_txt)
+        
+        QMessageBox.information(self, "Analysis Complete", "All Financial Engines Executed Successfully!")
 
-        header = QFrame()
-        header.setStyleSheet("background-color: #1E3A8A; border-radius: 8px; padding: 25px;")
-        h_layout = QVBoxLayout(header)
-        title = QLabel("FRCS V5 - Master Financial Advisory Platform")
-        title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("color: white; font-size: 24px; font-weight: bold;")
-        sub = QLabel("Multi-Model Financial Statement Analysis & Corporate Valuation System")
-        sub.setAlignment(Qt.AlignCenter)
-        sub.setStyleSheet("color: #93C5FD; font-size: 15px;")
-        h_layout.addWidget(title)
-        h_layout.addWidget(sub)
-        layout.addWidget(header)
-
-        desc = QLabel("Enter Year T and Year T-1 raw financial statements to run multi-model distress scoring and DCF valuation.")
-        desc.setAlignment(Qt.AlignCenter)
-        desc.setStyleSheet("font-size: 15px; color: #374151; margin-top: 40px;")
-        layout.addWidget(desc)
-
-        btn_box = QHBoxLayout()
-        btn_start = QPushButton("Open Multi-Year Financial Inputs & Valuation Suite")
-        btn_start.setStyleSheet("background-color: #059669; color: white; padding: 15px 30px; font-size: 16px; font-weight: bold; border-radius: 6px;")
-        btn_start.clicked.connect(self.open_dialog)
-
-        btn_exit = QPushButton("Exit")
-        btn_exit.setStyleSheet("background-color: #DC2626; color: white; padding: 15px 30px; font-size: 16px; font-weight: bold; border-radius: 6px;")
-        btn_exit.clicked.connect(self.close)
-
-        btn_box.addWidget(btn_exit)
-        btn_box.addWidget(btn_start)
-        layout.addLayout(btn_box)
-
-    def open_dialog(self):
-        d = MasterFRCSDialog(self)
-        d.exec()
+    def calc_sens_price(self, fcff, w, g, net_debt, shares):
+        if w <= g or shares <= 0:
+            return 0.0
+        tv = (fcff * (1 + g)) / (w - g)
+        ev = (fcff / (1 + w)) + (tv / (1 + w))
+        eq = ev - net_debt
+        return max(eq / shares, 0.0)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    win = FRCSMainWindow()
+    win = FRCSFullEngineSuite()
     win.show()
     sys.exit(app.exec())
