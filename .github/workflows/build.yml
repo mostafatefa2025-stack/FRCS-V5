@@ -23,8 +23,15 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller PySide6 pandas numpy openpyxl
 
-    - name: Build Executable
+    - name: Ensure Main File Exists and Build
+      shell: powershell
       run: |
+        if (-not (Test-Path "desktop")) { New-Item -ItemType Directory -Path "desktop" }
+        if (-not (Test-Path "desktop/main.py")) {
+            if (Test-Path "main.py") {
+                Copy-Item "main.py" "desktop/main.py"
+            }
+        }
         pyinstaller --noconfirm --onefile --name "FRCS_V5_Full_App" desktop/main.py
 
     - name: Upload Build Artifact
